@@ -10,7 +10,9 @@ export type VibeCardProps = {
   energyLevel?: number;
   currentIntent?: string[];
   contextTag?: string;
-  interactionBoundary?: string;
+  conversationalPreferences?: string;
+  interactionBoundary?: string; // fallback
+  askMeAbout?: string[];
   accentHex?: string;
   borderGlowHex?: string;
   bgFromHex?: string;
@@ -30,7 +32,7 @@ const defaultProps = {
   moodTitle: "FEELING\nGOOD",
   energyLevel: 5,
   currentIntent: ["Chill conversation"],
-  interactionBoundary: "Fast replies",
+  conversationalPreferences: "Fast replies",
   accentHex: "#29d8fa",
   borderGlowHex: "#ec49da",
   bgFromHex: "#1c103a",
@@ -46,7 +48,9 @@ export default function VibeCard(props: VibeCardProps) {
     energyLevel = defaultProps.energyLevel,
     currentIntent = defaultProps.currentIntent,
     contextTag,
-    interactionBoundary = defaultProps.interactionBoundary,
+    conversationalPreferences,
+    interactionBoundary, // fallback
+    askMeAbout = [],
     accentHex = defaultProps.accentHex,
     borderGlowHex = defaultProps.borderGlowHex,
     bgFromHex = defaultProps.bgFromHex,
@@ -60,6 +64,7 @@ export default function VibeCard(props: VibeCardProps) {
   } = props;
 
   const lines = moodTitle.split("\n");
+  const activePreferences = conversationalPreferences || interactionBoundary || defaultProps.conversationalPreferences;
 
   return (
     <div
@@ -146,12 +151,32 @@ export default function VibeCard(props: VibeCardProps) {
         {contextTag && (
           <span className="text-gray-300 text-sm">#{contextTag}</span>
         )}
-        <span className="text-gray-400 text-xs">{interactionBoundary}</span>
+        <span className="text-gray-400 text-xs">{activePreferences}</span>
       </div>
 
       {/* Divider */}
-      {(feelingOptions?.length > 0 || vibeAvailability || personalityPrompt) && (
+      {(feelingOptions?.length > 0 || vibeAvailability || personalityPrompt || askMeAbout.length > 0) && (
         <div className="h-px bg-white/10 my-1"></div>
+      )}
+
+      {/* Ask me about... */}
+      {askMeAbout && askMeAbout.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <span className="text-white/80 text-xs font-semibold uppercase tracking-wider flex items-center gap-2">
+            <span style={{ color: accentHex }}>💬</span>
+            Ask me about...
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {askMeAbout.map((item, idx) => (
+              <span
+                key={idx}
+                className="px-2.5 py-1 rounded-full text-xs font-medium bg-white/20 text-white border border-white/30"
+              >
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* What I'm Feeling Like Today */}

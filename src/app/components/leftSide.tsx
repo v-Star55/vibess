@@ -17,6 +17,7 @@ import {
   MessageCircle,
   Lightbulb,
   Loader2,
+  HeartHandshake,
 } from "lucide-react";
 
 export default function LeftSide() {
@@ -82,7 +83,7 @@ export default function LeftSide() {
     { icon: Compass, label: "Discover", path: "/app-home" },
     { icon: Search, label: "Explore", path: "/explore" },
     { icon: MessageCircle, label: "Chats", path: "/chat" },
-    { icon: Users, label: "Chat Rooms", path: "/chat-room" },
+    { icon: HeartHandshake, label: "Listen", path: "/listen" },
     { icon: FileText, label: "Groups", path: "/groups" },
     { icon: MessageCircle, label: "Whisper Space", path: "/whisper-space" },
     { icon: Gamepad2, label: "Games", path: "/games" },

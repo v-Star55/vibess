@@ -8,7 +8,8 @@ export async function createVibeCard(vibeData: {
   energyLevel: number;
   currentIntent: string[];
   contextTag?: string;
-  interactionBoundary: string;
+  conversationalPreferences: string;
+  askMeAbout?: string[];
   feelingOptions?: string[];
   vibeAvailability?: string;
   personalityPrompt?: string;
@@ -177,6 +178,16 @@ export async function getMyChats() {
   }
 }
 
+export async function deleteChat(chatId: string) {
+  try {
+    const res = await api.delete(`/chat/${chatId}`);
+    return res.data;
+  } catch (error: any) {
+    console.error("Error deleting chat:", error);
+    throw error;
+  }
+}
+
 export async function getUnreadChatCount() {
   try {
     const res = await api.get("/chat/unread");
@@ -191,57 +202,6 @@ export async function getUnreadChatCount() {
   }
 }
 
-////////////////   CHAT ROOM API
-
-export async function generateChatRoom() {
-  try {
-    const res = await api.post("/chat-room/generate");
-    return res.data;
-  } catch (error: any) {
-    console.error("Error generating chat room:", error);
-    throw error;
-  }
-}
-
-export async function getChatRooms() {
-  try {
-    const res = await api.get("/chat-room/list");
-    return res.data;
-  } catch (error: any) {
-    console.error("Error fetching chat rooms:", error);
-    throw error;
-  }
-}
-
-export async function getChatRoom(roomId: string) {
-  try {
-    const res = await api.get(`/chat-room/${roomId}`);
-    return res.data;
-  } catch (error: any) {
-    console.error("Error fetching chat room:", error);
-    throw error;
-  }
-}
-
-export async function sendChatRoomMessage(roomId: string, text: string) {
-  try {
-    const res = await api.post(`/chat-room/${roomId}`, { text });
-    return res.data;
-  } catch (error: any) {
-    console.error("Error sending chat room message:", error);
-    throw error;
-  }
-}
-
-export async function expireAndRegenerateChatRooms() {
-  try {
-    const res = await api.post("/chat-room/expire");
-    return res.data;
-  } catch (error: any) {
-    console.error("Error expiring and regenerating chat rooms:", error);
-    throw error;
-  }
-}
 
 ////////////////   AI API (Gemini)
 
@@ -266,6 +226,115 @@ export async function enhanceVibeDescriptionAI(vibeData: {
     return res.data;
   } catch (error: any) {
     console.error("Error enhancing description:", error);
+    throw error;
+  }
+}
+
+
+////////////////   LISTEN API
+
+export async function createListenCard(listenData: {
+  topic: string;
+  reason: string;
+  heaviness: string;
+}) {
+  try {
+    const res = await api.post("/listen/create", listenData);
+    return res.data;
+  } catch (error: any) {
+    console.error("Error creating listen card:", error);
+    throw error;
+  }
+}
+
+export async function getMyActiveListenCard() {
+  try {
+    const res = await api.get("/listen/active");
+    return res.data;
+  } catch (error: any) {
+    console.error("Error fetching my active listen card:", error);
+    throw error;
+  }
+}
+
+export async function cancelListenCard(cardId: string) {
+  try {
+    const res = await api.post("/listen/cancel", { cardId });
+    return res.data;
+  } catch (error: any) {
+    console.error("Error cancelling listen card:", error);
+    throw error;
+  }
+}
+
+export async function getListenCards() {
+  try {
+    const res = await api.get("/listen/list");
+    return res.data;
+  } catch (error: any) {
+    console.error("Error fetching listen cards list:", error);
+    throw error;
+  }
+}
+
+export async function acceptListenCard(cardId: string) {
+  try {
+    const res = await api.post("/listen/accept", { cardId });
+    return res.data;
+  } catch (error: any) {
+    console.error("Error accepting listen card:", error);
+    throw error;
+  }
+}
+
+export async function getListenStatus() {
+  try {
+    const res = await api.get("/listen/status");
+    return res.data;
+  } catch (error: any) {
+    console.error("Error fetching listen status:", error);
+    throw error;
+  }
+}
+
+export async function endChatInChat(chatId: string) {
+  try {
+    const res = await api.patch(`/chat/${chatId}`, {
+      action: "endChat",
+    });
+    return res.data;
+  } catch (error: any) {
+    console.error("Error ending chat:", error);
+    throw error;
+  }
+}
+
+export async function selectListenerForCard(cardId: string, listenerId: string) {
+  try {
+    const res = await api.post("/listen/select-listener", { cardId, listenerId });
+    return res.data;
+  } catch (error: any) {
+    console.error("Error selecting listener for card:", error);
+    throw error;
+  }
+}
+
+export async function rateListener(cardId: string, rating: number) {
+  try {
+    const res = await api.post("/listen/rate", { cardId, rating });
+    return res.data;
+  } catch (error: any) {
+    console.error("Error rating listener:", error);
+    throw error;
+  }
+}
+
+export async function getMyListenChats() {
+  try {
+    const res = await api.get("/listen/my-chats");
+    return res.data;
+  } catch (error: any) {
+    console.error("Error fetching my listen chats:", error);
     throw error;
   }
 }

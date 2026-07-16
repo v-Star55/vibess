@@ -23,13 +23,15 @@ export async function POST(req: NextRequest) {
       description,
       creationReason,
       reasonNote,
+      lookingFor,
+      whoIsItFor,
       location,
     } = body;
 
     // Validation
-    if (!category || !subType || !talkTopics || !creationReason || !location) {
+    if (!category || !subType || !talkTopics || !creationReason || !lookingFor || !whoIsItFor || !location) {
       return NextResponse.json(
-        { message: "Category, subType, talkTopics, creationReason, and location are required" },
+        { message: "Category, subType, talkTopics, creationReason, lookingFor, whoIsItFor, and location are required" },
         { status: 400 }
       );
     }
@@ -48,6 +50,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!Array.isArray(lookingFor) || lookingFor.length === 0 || lookingFor.length > 3) {
+      return NextResponse.json(
+        { message: "Must select 1-3 options for 'Looking For'" },
+        { status: 400 }
+      );
+    }
+
+    if (!Array.isArray(whoIsItFor) || whoIsItFor.length === 0) {
+      return NextResponse.json(
+        { message: "Must select at least 1 option for 'Who is this GP for'" },
+        { status: 400 }
+      );
+    }
+
     if (description && description.length > 200) {
       return NextResponse.json(
         { message: "Description must be 200 characters or less" },
@@ -61,6 +77,7 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
 
     // Get user with GP creation history
     const currentUser = await User.findById(user._id);
@@ -158,6 +175,8 @@ export async function POST(req: NextRequest) {
       description: description || "",
       creationReason,
       reasonNote: reasonNote || "",
+      lookingFor,
+      whoIsItFor,
       location: locationData,
       city: location.city || "",
       zone: location.zone || "",

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/src/app/config/dbconfig";
 import VibeCard from "@/src/models/vibeCardModel";
 import User from "@/src/models/userModel";
+import UserProfileDetail from "@/src/models/userProfileDetailModel";
 import getUserFromToken from "@/src/app/helpers/getUserFromToken";
 import { calculateVibeSimilarity } from "@/src/app/lib/vibeMatching";
 
@@ -39,6 +40,9 @@ export async function GET(req: NextRequest) {
       ...blockedByUserIds,
     ];
 
+    // Get current user's profile details
+    const myDetails = await UserProfileDetail.findOne({ user: user._id });
+
     // Get all other active vibe cards, excluding blocked users (bidirectional)
     const otherVibeCards = await VibeCard.find({
       user: { 
@@ -48,23 +52,50 @@ export async function GET(req: NextRequest) {
       isActive: true,
     }).populate("user", "name username profileImage");
 
+    // Fetch user profile details for other users to match hobbies and personalities
+    const otherUserIds = otherVibeCards.map((c) => {
+      const u = c.user as any;
+      return u?._id || u;
+    });
+    const otherDetails = await UserProfileDetail.find({
+      user: { $in: otherUserIds },
+    });
+
+    const detailsMap = new Map();
+    otherDetails.forEach((d) => {
+      detailsMap.set(d.user.toString(), d);
+    });
+
     // Calculate matches
     const matches = otherVibeCards
       .map((card) => {
+        const cardUserId = (card.user as any)?._id?.toString() || card.user?.toString();
+        const cardDetails = detailsMap.get(cardUserId);
+        
         const matchResult = calculateVibeSimilarity(
           {
             vibeScore: myVibeCard.vibeScore,
             energyLevel: myVibeCard.energyLevel,
             currentIntent: myVibeCard.currentIntent,
             contextTag: myVibeCard.contextTag,
-            interactionBoundary: myVibeCard.interactionBoundary,
+            conversationalPreferences: myVibeCard.conversationalPreferences,
+            askMeAbout: myVibeCard.askMeAbout || [],
+            feelingOptions: myVibeCard.feelingOptions || [],
+            hobbies: myDetails?.hobbies || [],
+            personalities: myDetails?.personalities || [],
+            coordinates: myVibeCard.location?.coordinates as [number, number],
           },
           {
             vibeScore: card.vibeScore,
             energyLevel: card.energyLevel,
             currentIntent: card.currentIntent,
             contextTag: card.contextTag,
-            interactionBoundary: card.interactionBoundary,
+            conversationalPreferences: card.conversationalPreferences,
+            askMeAbout: card.askMeAbout || [],
+            feelingOptions: card.feelingOptions || [],
+            hobbies: cardDetails?.hobbies || [],
+            personalities: cardDetails?.personalities || [],
+            coordinates: card.location?.coordinates as [number, number],
           }
         );
 
@@ -82,6 +113,7 @@ export async function GET(req: NextRequest) {
     const moodTwins = matches.filter((m) => m.category === "Mood Twins");
     const nearEnergy = matches.filter((m) => m.category === "Near Your Energy");
     const similarVibes = matches.filter((m) => m.category === "Similar Vibes");
+    const interestsTwins = matches.filter((m) => m.category === "Interests Twin");
 
     return NextResponse.json({
       success: true,
@@ -90,6 +122,7 @@ export async function GET(req: NextRequest) {
         moodTwins,
         nearEnergy,
         similarVibes,
+        interestsTwins,
       },
       myVibe: myVibeCard,
     });

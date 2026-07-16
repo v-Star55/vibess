@@ -12,7 +12,7 @@ const GP_CATEGORIES = ["Vibe GP", "Movie GP", "Anime GP", "Other GP"] as const;
 const VIBE_GP_SUBTYPES = ["Fun", "Chill", "Overthinker", "Chaos", "Calm", "Random Talk"] as const;
 const MOVIE_GP_SUBTYPES = ["Movie Name", "Genre"] as const;
 const ANIME_GP_SUBTYPES = ["Anime Name", "Genre"] as const;
-const OTHER_GP_SUBTYPES = ["Standup", "Travel", "Trip", "Tech Talk", "Music", "Sports"] as const;
+const OTHER_GP_SUBTYPES = ["Standup", "Travel", "Trip", "Tech Talk", "Music", "Sports", "Other"] as const;
 const MOVIE_GENRES = ["Horror", "Action", "Sci-Fi", "Comedy", "Drama", "Romance", "Thriller", "Fantasy"] as const;
 const ANIME_GENRES = ["Shounen", "Romance", "Isekai", "Slice of Life", "Action", "Comedy", "Drama", "Fantasy"] as const;
 const TALK_TOPICS = [
@@ -40,6 +40,39 @@ const CREATION_REASONS = [
   "Want a safe chill space",
 ] as const;
 
+const LOOKING_FOR_OPTIONS = [
+  "🤝 New Friends",
+  "😂 Fun Conversations",
+  "🎬 Movie Discussions",
+  "🎌 Anime Discussions",
+  "🎮 Gaming Squad",
+  "📚 Study Group",
+  "💻 Coding Friends",
+  "🎵 Music Buddies",
+  "☕ Coffee Chats",
+  "❤️ Relationship Advice",
+  "🧠 Deep Talks",
+  "🎤 Voice Calls",
+  "🌍 Travel Buddies",
+] as const;
+
+const WHO_IS_IT_FOR_OPTIONS = [
+  "🌍 Everyone",
+  "🎓 Students",
+  "💻 Developers",
+  "🎮 Gamers",
+  "🎬 Movie Lovers",
+  "🎌 Anime Fans",
+  "🎵 Music Lovers",
+  "📚 Readers",
+  "🏋️ Fitness Enthusiasts",
+  "☕ Coffee Lovers",
+  "✈️ Travelers",
+  "🎨 Creators",
+  "🚀 Entrepreneurs",
+] as const;
+
+
 export default function CreateGPPage() {
   const router = useRouter();
   const { user } = useUserStore();
@@ -54,9 +87,12 @@ export default function CreateGPPage() {
   const [genre, setGenre] = useState<string>("");
   const [talkTopics, setTalkTopics] = useState<string[]>([]);
   const [description, setDescription] = useState<string>("");
+  const [lookingFor, setLookingFor] = useState<string[]>([]);
+  const [whoIsItFor, setWhoIsItFor] = useState<string[]>([]);
   const [creationReason, setCreationReason] = useState<string>("");
   const [reasonNote, setReasonNote] = useState<string>("");
   const [location, setLocation] = useState<{ latitude: number; longitude: number; city?: string; zone?: string } | null>(null);
+
 
   useEffect(() => {
     if (!user) {
@@ -115,6 +151,14 @@ export default function CreateGPPage() {
       toast.error("Please select a sub-type");
       return;
     }
+    if (step === 2 && (subType === "Movie Name" || subType === "Anime Name" || subType === "Other") && !specificName.trim()) {
+      toast.error(subType === "Other" ? "Please enter a custom category/topic" : `Please enter a ${category === "Movie GP" ? "movie" : "anime"} name`);
+      return;
+    }
+    if (step === 2 && subType === "Genre" && !genre) {
+      toast.error("Please select a genre");
+      return;
+    }
     if (step === 3 && talkTopics.length === 0) {
       toast.error("Please select at least one talk topic");
       return;
@@ -127,12 +171,16 @@ export default function CreateGPPage() {
       toast.error("Description must be 200 characters or less");
       return;
     }
-    if (step === 4 && !creationReason) {
-      toast.error("Please select a reason for creating this GP");
+    if (step === 4 && lookingFor.length === 0) {
+      toast.error("Please select what you are looking for");
       return;
     }
-    if (step === 4 && reasonNote.length > 100) {
-      toast.error("Reason note must be 100 characters or less");
+    if (step === 4 && lookingFor.length > 3) {
+      toast.error("Please select maximum 3 options for 'Looking For'");
+      return;
+    }
+    if (step === 5 && whoIsItFor.length === 0) {
+      toast.error("Please select who this GP is for");
       return;
     }
     setStep(step + 1);
@@ -145,6 +193,14 @@ export default function CreateGPPage() {
   const handleSubmit = async () => {
     if (!location) {
       toast.error("Location is required to create a GP");
+      return;
+    }
+    if (!creationReason) {
+      toast.error("Please select a reason for creating this GP");
+      return;
+    }
+    if (reasonNote.length > 100) {
+      toast.error("Reason note must be 100 characters or less");
       return;
     }
 
@@ -161,6 +217,8 @@ export default function CreateGPPage() {
           genre: genre.trim() || "",
           talkTopics,
           description: description.trim() || "",
+          lookingFor,
+          whoIsItFor,
           creationReason,
           reasonNote: reasonNote.trim() || "",
           location: {
@@ -198,6 +256,27 @@ export default function CreateGPPage() {
       setTalkTopics([...talkTopics, topic]);
     }
   };
+
+  const toggleLookingFor = (option: string) => {
+    if (lookingFor.includes(option)) {
+      setLookingFor(lookingFor.filter((item) => item !== option));
+    } else {
+      if (lookingFor.length >= 3) {
+        toast.error("Maximum 3 looking for options allowed");
+        return;
+      }
+      setLookingFor([...lookingFor, option]);
+    }
+  };
+
+  const toggleWhoIsItFor = (option: string) => {
+    if (whoIsItFor.includes(option)) {
+      setWhoIsItFor(whoIsItFor.filter((item) => item !== option));
+    } else {
+      setWhoIsItFor([...whoIsItFor, option]);
+    }
+  };
+
 
   const getSubTypes = () => {
     switch (category) {
@@ -254,7 +333,7 @@ export default function CreateGPPage() {
         {/* Progress Steps */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            {[1, 2, 3, 4].map((s) => (
+            {[1, 2, 3, 4, 5, 6].map((s) => (
               <div key={s} className="flex items-center flex-1">
                 <div
                   className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all ${
@@ -265,7 +344,7 @@ export default function CreateGPPage() {
                 >
                   {step > s ? <Check className="w-5 h-5" /> : s}
                 </div>
-                {s < 4 && (
+                {s < 6 && (
                   <div
                     className={`flex-1 h-0.5 mx-2 transition-all ${
                       step > s ? "bg-gradient-to-r from-purple-500 to-pink-500" : "bg-white/10"
@@ -279,6 +358,8 @@ export default function CreateGPPage() {
             <span>Category</span>
             <span>Sub-Type</span>
             <span>Talk Topics</span>
+            <span>Looking For</span>
+            <span>Audience</span>
             <span>Reason</span>
           </div>
         </div>
@@ -373,17 +454,23 @@ export default function CreateGPPage() {
               </div>
             )}
 
-            {/* Show name input for Movie/Anime Name sub-type */}
-            {(subType === "Movie Name" || subType === "Anime Name") && (
+            {/* Show name input for Movie/Anime Name sub-type or Custom topic for "Other" subtype */}
+            {(subType === "Movie Name" || subType === "Anime Name" || subType === "Other") && (
               <div className="mt-6 space-y-4">
                 <h3 className="text-lg font-semibold text-white">
-                  Enter {category === "Movie GP" ? "Movie" : "Anime"} Name
+                  {subType === "Other"
+                    ? "Enter Custom Topic/Category Name"
+                    : `Enter ${category === "Movie GP" ? "Movie" : "Anime"} Name`}
                 </h3>
                 <input
                   type="text"
                   value={specificName}
                   onChange={(e) => setSpecificName(e.target.value)}
-                  placeholder={`e.g., ${category === "Movie GP" ? "Inception" : "Attack on Titan"}`}
+                  placeholder={
+                    subType === "Other"
+                      ? "e.g., Coding, Book Club, Gaming"
+                      : `e.g., ${category === "Movie GP" ? "Inception" : "Attack on Titan"}`
+                  }
                   className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50"
                 />
               </div>
@@ -435,8 +522,70 @@ export default function CreateGPPage() {
           </div>
         )}
 
-        {/* Step 4: Reason */}
+        {/* Step 4: Looking For */}
         {step === 4 && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-2">Looking For (Required)</h2>
+              <p className="text-white/60">Choose up to 3 options</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {LOOKING_FOR_OPTIONS.map((option) => (
+                <button
+                  key={option}
+                  onClick={() => toggleLookingFor(option)}
+                  className={`p-3 rounded-lg border transition-all text-left ${
+                    lookingFor.includes(option)
+                      ? "bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-500/50"
+                      : "bg-white/5 border-white/10 hover:border-white/20"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-white">{option}</span>
+                    {lookingFor.includes(option) && (
+                      <Check className="w-5 h-5 text-purple-400" />
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-white/40 text-right">{lookingFor.length}/3 selected</p>
+          </div>
+        )}
+
+        {/* Step 5: Who is this GP for? */}
+        {step === 5 && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-2">Who is this GP for? (Required)</h2>
+              <p className="text-white/60">Choose all that apply</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {WHO_IS_IT_FOR_OPTIONS.map((option) => (
+                <button
+                  key={option}
+                  onClick={() => toggleWhoIsItFor(option)}
+                  className={`p-3 rounded-lg border transition-all text-left ${
+                    whoIsItFor.includes(option)
+                      ? "bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-500/50"
+                      : "bg-white/5 border-white/10 hover:border-white/20"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-white">{option}</span>
+                    {whoIsItFor.includes(option) && (
+                      <Check className="w-5 h-5 text-purple-400" />
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-white/40 text-right">{whoIsItFor.length} selected</p>
+          </div>
+        )}
+
+        {/* Step 6: Reason */}
+        {step === 6 && (
           <div className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold text-white mb-2">Reason for Creating This GP</h2>
@@ -496,7 +645,7 @@ export default function CreateGPPage() {
             <ChevronLeft className="w-5 h-5" />
             <span>{step === 1 ? "Cancel" : "Back"}</span>
           </button>
-          {step < 4 ? (
+          {step < 6 ? (
             <button
               onClick={handleNext}
               className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 transition-all font-semibold"
@@ -511,6 +660,7 @@ export default function CreateGPPage() {
               className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
+
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
                   <span>Creating...</span>

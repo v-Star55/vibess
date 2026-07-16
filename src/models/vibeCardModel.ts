@@ -63,7 +63,7 @@ const themeSchema = new mongoose.Schema(
 );
 
 // Intent options
-const INTENT_OPTIONS = [
+export const INTENT_OPTIONS = [
   "Chill conversation",
   "Make a friend",
   "Share thoughts",
@@ -72,16 +72,33 @@ const INTENT_OPTIONS = [
   "Need advice",
   "Want to laugh",
   "No talking, just vibe",
+  "Gaming buddy",
+  "Travel buddy",
+  "Study together",
+  "Deep conversations",
 ];
 
-// Interaction boundary options
-const INTERACTION_BOUNDARY_OPTIONS = [
+// Conversational preferences options (Interaction boundary)
+export const CONVERSATIONAL_PREFERENCES_OPTIONS = [
   "Fast replies",
   "Slow replies",
   "Short messages only",
   "Voice notes okay",
-  "Deep conversations",
   "Light and fun only",
+];
+
+// Ask me about options
+export const ASK_ME_ABOUT_OPTIONS = [
+  "Anime",
+  "Travel",
+  "Food",
+  "Music",
+  "movie",
+  "Coding",
+  "startups",
+  "photography",
+  "sports",
+  "art",
 ];
 
 // Feeling options
@@ -183,10 +200,20 @@ const vibeCardSchema = new mongoose.Schema(
       trim: true,
       maxlength: 20,
     },
-    interactionBoundary: {
+    conversationalPreferences: {
       type: String,
       required: true,
-      enum: INTERACTION_BOUNDARY_OPTIONS,
+      enum: CONVERSATIONAL_PREFERENCES_OPTIONS,
+    },
+    askMeAbout: {
+      type: [String],
+      default: [],
+      validate: {
+        validator: function (v: string[]) {
+          return v.length <= 3 && v.every((option) => ASK_ME_ABOUT_OPTIONS.includes(option));
+        },
+        message: "All Ask me about options must be from the predefined list, and you can choose up to 3",
+      },
     },
     feelingOptions: {
       type: [String],
@@ -245,7 +272,7 @@ const vibeCardSchema = new mongoose.Schema(
 vibeCardSchema.index({ user: 1, isActive: 1 });
 vibeCardSchema.index({ "location.coordinates": "2dsphere" });
 vibeCardSchema.index({ "vibeScore.mood": 1, "vibeScore.energy": 1 });
-vibeCardSchema.index({ energyLevel: 1, currentIntent: 1, interactionBoundary: 1 });
+vibeCardSchema.index({ energyLevel: 1, currentIntent: 1, conversationalPreferences: 1 });
 
 // Delete cached model if it exists to ensure fresh schema
 if (mongoose.models.VibeCard) {

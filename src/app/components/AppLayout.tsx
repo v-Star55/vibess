@@ -3,9 +3,9 @@
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useUserStore } from "../../store/store";
-import Header from "./Header";
 import LeftSide from "./leftSide";
 import LocationPermission from "./LocationPermission";
+import { SocketProvider } from "../../hooks/useSocket";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -70,19 +70,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden font-sans bg-linear-to-br from-[#0a0118] via-[#1d0033] to-[#2a0044]">
-      {/* Left Sidebar - Menu & Library */}
-      <aside className="w-64 lg:w-72 h-screen shrink-0 border-r border-white/5 bg-[#1a0030]/50">
-        <LeftSide />
-      </aside>
-      
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden bg-[#0a0118]">
-        <Header />
-        <div className="flex-1 overflow-y-auto">
-          {children}
-        </div>
-      </main>
-    </div>
+    <SocketProvider>
+      <div className="flex h-screen w-full overflow-hidden font-sans bg-linear-to-br from-[#0a0118] via-[#1d0033] to-[#2a0044]">
+        {/* Left Sidebar - Menu & Library */}
+        <aside className="w-64 lg:w-72 h-screen shrink-0 border-r border-white/5 bg-[#1a0030]/50">
+          <LeftSide />
+        </aside>
+        
+        {/* Main Content Area */}
+        <main className="flex-1 flex flex-col h-screen overflow-hidden bg-[#0a0118]">
+          <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+            {children}
+          </div>
+        </main>
+      </div>
+    </SocketProvider>
   );
 }

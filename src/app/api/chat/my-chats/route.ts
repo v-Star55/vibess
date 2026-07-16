@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/src/app/config/dbconfig";
 import Chat from "@/src/models/chatModel";
 import getUserFromToken from "@/src/app/helpers/getUserFromToken";
+import mongoose from "mongoose";
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,8 +13,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
+    const userId = typeof user._id === "string" ? new mongoose.Types.ObjectId(user._id) : user._id;
+
     const chats = await Chat.find({
-      participants: user._id,
+      participants: userId,
+      isListenChat: { $ne: true },
+      deletedBy: { $nin: [userId] },   // hide soft-deleted chats
     })
       .populate("participants", "name username profileImage")
       .sort({ updatedAt: -1 })

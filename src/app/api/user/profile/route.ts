@@ -3,6 +3,9 @@ import jwt from "jsonwebtoken";
 import connectDB from "@/src/app/config/dbconfig";
 import User from "@/src/models/userModel";
 
+import getOrCreateListenProfile from "@/src/app/helpers/getOrCreateListenProfile";
+import getOrCreateProfileDetails from "@/src/app/helpers/getOrCreateProfileDetails";
+
 export async function GET(req: NextRequest) {
   try {
     await connectDB();
@@ -29,10 +32,21 @@ export async function GET(req: NextRequest) {
     const followers = user.followers.length;
     const following = user.following.length;
 
+    // Fetch ListenProfile
+    const listenProfile = await getOrCreateListenProfile(user._id.toString());
+
+    // Fetch ProfileDetails
+    const profileDetails = await getOrCreateProfileDetails(user._id.toString());
+
     const profile = {
       user,
       followers,
       following,
+      listenProfile: {
+        rating: listenProfile.rating,
+        ratingCount: listenProfile.ratingCount,
+      },
+      profileDetails,
     };
 
     return NextResponse.json({ message: "Profile fetched successfully", profile }, { status: 200 });

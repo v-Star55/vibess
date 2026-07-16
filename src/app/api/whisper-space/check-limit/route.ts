@@ -12,19 +12,19 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    // Check if user has posted in last 6 hours
-    const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+    // Check if user has posted in last 1 hour
+    const oneHourAgo = new Date(Date.now() - 1 * 60 * 60 * 1000);
     const recentConfession = await Confession.findOne({
       createdBy: user._id,
-      createdAt: { $gte: sixHoursAgo },
+      createdAt: { $gte: oneHourAgo },
       status: "active",
     })
       .sort({ createdAt: -1 })
-      .lean();
+      .lean() as any;
 
     if (recentConfession) {
       const timeUntilNext = Math.ceil(
-        (new Date(recentConfession.createdAt).getTime() + 6 * 60 * 60 * 1000 - Date.now()) / (1000 * 60)
+        (new Date(recentConfession.createdAt).getTime() + 1 * 60 * 60 * 1000 - Date.now()) / (1000 * 60)
       );
       const hoursRemaining = Math.floor(timeUntilNext / 60);
       const minutesRemaining = timeUntilNext % 60;

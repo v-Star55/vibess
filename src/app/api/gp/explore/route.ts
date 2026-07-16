@@ -154,6 +154,8 @@ export async function GET(req: NextRequest) {
       description: gp.description,
       creationReason: gp.creationReason,
       reasonNote: gp.reasonNote,
+      lookingFor: gp.lookingFor || [],
+      whoIsItFor: gp.whoIsItFor || [],
       members: gp.members,
       memberCount: gp.members.length,
       maxMembers: gp.maxMembers,

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Bell, MessageCircle, Search } from "lucide-react";
 import { useUserStore } from "@/src/store/store";
 import { useChatNotificationStore } from "@/src/store/chatStore";
+import { useSocket } from "@/src/hooks/useSocket";
 import { getUnreadChatCount } from "../lib/vibeApi";
 import Image from "next/image";
 import logo from "@/public/logo.png";
@@ -13,6 +14,7 @@ export default function Header() {
   const router = useRouter();
   const { user } = useUserStore();
   const { unreadCount, setUnreadCount } = useChatNotificationStore();
+  const { socket, connected } = useSocket();
 
   const handleCreateClick = async () => {
     if (user?.id) {
@@ -47,13 +49,24 @@ export default function Header() {
     };
 
     fetchUnread();
-    const interval = setInterval(fetchUnread, 30000);
+    // Reduced fallback polling to 60 seconds (since we have real-time sockets)
+    const interval = setInterval(fetchUnread, 60000);
+
+    // Socket real-time message notification
+    if (socket && connected) {
+      socket.on("message-notification", () => {
+        fetchUnread();
+      });
+    }
 
     return () => {
       ignore = true;
       clearInterval(interval);
+      if (socket) {
+        socket.off("message-notification");
+      }
     };
-  }, [user, setUnreadCount]);
+  }, [user, setUnreadCount, socket, connected]);
 
   const hasUnread = unreadCount > 0;
 

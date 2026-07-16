@@ -61,6 +61,15 @@ const chatSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    isListenChat: {
+      type: Boolean,
+      default: false,
+    },
+    listenCardId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ListenCard",
+      default: null,
+    },
     // Safety features
     reportedBy: [
       {
@@ -81,6 +90,13 @@ const chatSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+    // Soft-delete: participants who removed this chat from their inbox
+    deletedBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
   },
   { timestamps: true }
 );
@@ -89,6 +105,7 @@ const chatSchema = new mongoose.Schema(
 chatSchema.index({ participants: 1 });
 chatSchema.index({ expiresAt: 1 });
 chatSchema.index({ isLocked: 1, isPermanentlyUnlocked: 1 });
+chatSchema.index({ deletedBy: 1 });
 
 // Method to check if chat is expired
 chatSchema.methods.checkExpiration = function () {
@@ -122,6 +139,9 @@ chatSchema.methods.checkPermanentUnlock = async function () {
   return false;
 };
 
+if (mongoose.models && mongoose.models.Chat) {
+  delete mongoose.models.Chat;
+}
 const Chat = mongoose.models.Chat || mongoose.model("Chat", chatSchema);
 export default Chat;
 

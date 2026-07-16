@@ -243,6 +243,27 @@ export async function updateUserProfile(formData: FormData) {
   }
 }
 
+export async function updateUserProfileDetails(details: any) {
+  try {
+    const res = await api.patch("/user/profile-details", details);
+    return res.data;
+  } catch (error: any) {
+    console.error("Error updating profile details:", error);
+    throw error;
+  }
+}
+
+export async function getUserProfileDetails(userId?: string) {
+  try {
+    const url = userId ? `/user/profile-details?userId=${userId}` : "/user/profile-details";
+    const res = await api.get(url);
+    return res.data;
+  } catch (error: any) {
+    console.error("Error getting profile details:", error);
+    throw error;
+  }
+}
+
 /////////////////// Storiess
 
 export async function uploadStory(formData: FormData) {
@@ -377,11 +398,21 @@ export async function getGPDetails(gpId: string) {
   }
 }
 
+export async function sendGPMessage(gpId: string, text: string) {
+  try {
+    const res = await api.post(`/gp/${gpId}`, { text });
+    return res.data;
+  } catch (error: any) {
+    console.error("Error sending GP message:", error);
+    throw error;
+  }
+}
+
 ////////// Whisper Space API
 
-export async function createConfession(text: string) {
+export async function createConfession(text: string, mood?: string) {
   try {
-    const res = await api.post("/whisper-space/create", { text });
+    const res = await api.post("/whisper-space/create", { text, mood });
     return res.data;
   } catch (error: any) {
     console.error("Error creating confession:", error);
@@ -389,12 +420,22 @@ export async function createConfession(text: string) {
   }
 }
 
-export async function getConfessionsWall(page: number = 1, limit: number = 20) {
+export async function getConfessionsWall(page: number = 1, limit: number = 20, filter: string = "global") {
   try {
-    const res = await api.get(`/whisper-space/wall?page=${page}&limit=${limit}`);
+    const res = await api.get(`/whisper-space/wall?page=${page}&limit=${limit}&filter=${filter}`);
     return res.data;
   } catch (error: any) {
     console.error("Error fetching confessions:", error);
+    throw error;
+  }
+}
+
+export async function relateConfession(confessionId: string) {
+  try {
+    const res = await api.post("/whisper-space/relate", { confessionId });
+    return res.data;
+  } catch (error: any) {
+    console.error("Error relating confession:", error);
     throw error;
   }
 }

@@ -136,7 +136,16 @@ export default function RightSide() {
                     {myVibe.contextTag && (
                         <p className="text-xs text-white/70">#{myVibe.contextTag}</p>
                     )}
-                    <p className="text-xs text-white/60">{myVibe.interactionBoundary || "Fast replies"}</p>
+                    {myVibe.askMeAbout && myVibe.askMeAbout.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 py-1">
+                            {myVibe.askMeAbout.map((item: string, idx: number) => (
+                                <span key={idx} className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#33D6C0]/15 text-[#33D6C0] border border-[#33D6C0]/25">
+                                    {item}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                    <p className="text-xs text-white/60">{myVibe.conversationalPreferences || myVibe.interactionBoundary || "Fast replies"}</p>
                 </div>
 
                 {/* What I'm Feeling Like Today */}

@@ -21,17 +21,21 @@ export async function POST(req: NextRequest) {
       energyLevel,
       currentIntent,
       contextTag,
-      interactionBoundary,
+      conversationalPreferences,
+      interactionBoundary, // fallback for legacy clients
+      askMeAbout,
       feelingOptions,
       vibeAvailability,
       personalityPrompt,
       location,
     } = body;
 
+    const activeConversationalPreferences = conversationalPreferences || interactionBoundary;
+
     // Validation
-    if (!emoji || !description || energyLevel === undefined || !currentIntent || !interactionBoundary) {
+    if (!emoji || !description || energyLevel === undefined || !currentIntent || !activeConversationalPreferences) {
       return NextResponse.json(
-        { message: "Emoji, description, energyLevel, currentIntent, and interactionBoundary are required" },
+        { message: "Emoji, description, energyLevel, currentIntent, and conversationalPreferences are required" },
         { status: 400 }
       );
     }
@@ -91,7 +95,8 @@ export async function POST(req: NextRequest) {
       energyLevel,
       currentIntent,
       contextTag: contextTag || "",
-      interactionBoundary,
+      conversationalPreferences: activeConversationalPreferences,
+      askMeAbout: Array.isArray(askMeAbout) ? askMeAbout : [],
       feelingOptions: Array.isArray(feelingOptions) ? feelingOptions : [],
       vibeAvailability: vibeAvailability || "",
       personalityPrompt: personalityPrompt || "",

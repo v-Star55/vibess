@@ -54,6 +54,34 @@ const confessionSchema = new mongoose.Schema(
       enum: ["reported", "expired", "manual"],
       default: null,
     },
+    mood: {
+      type: String,
+      enum: ["chill", "fun", "overthinking", "chaos", "calm"],
+      default: "chill",
+      index: true,
+    },
+    location: {
+      type: {
+        type: String,
+        enum: ["Point"],
+        default: "Point",
+      },
+      coordinates: {
+        type: [Number],
+        default: [0, 0],
+      },
+    },
+    relates: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    relateCount: {
+      type: Number,
+      default: 0,
+      index: true,
+    },
   },
   { timestamps: true }
 );
@@ -62,6 +90,8 @@ const confessionSchema = new mongoose.Schema(
 confessionSchema.index({ status: 1, expiresAt: 1 });
 confessionSchema.index({ createdBy: 1, createdAt: -1 });
 confessionSchema.index({ reportCount: 1, status: 1 });
+confessionSchema.index({ location: "2dsphere" });
+confessionSchema.index({ relateCount: -1, createdAt: -1 });
 
 // Method to check if confession is expired
 confessionSchema.methods.isExpired = function () {

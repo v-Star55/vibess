@@ -14,7 +14,7 @@ export interface VibeScoreVector {
 
 export interface MatchResult {
   similarity: number; // 0-100
-  category: "Mood Twins" | "Near Your Energy" | "Similar Vibes" | null;
+  category: "Mood Twins" | "Near Your Energy" | "Similar Vibes" | "Interests Twin" | null;
   breakdown: {
     mood: number;
     energy: number;
@@ -23,6 +23,11 @@ export interface MatchResult {
     energyLevel: number;
     boundary: number;
     contextBonus: number;
+    interestsBonus?: number;
+    hobbiesBonus?: number;
+    personalityBonus?: number;
+    feelingsBonus?: number;
+    proximityBonus?: number;
   };
 }
 
@@ -297,6 +302,75 @@ function calculateContextTagBonus(tag1: string | undefined, tag2: string | undef
 }
 
 /**
+ * Calculate overlap bonus score (e.g. +5% per overlapping item up to a max limit)
+ */
+export function calculateOverlapBonus(
+  list1: string[] | undefined,
+  list2: string[] | undefined,
+  bonusPerMatch: number = 5,
+  maxBonus: number = 10
+): number {
+  if (!list1 || !list2 || list1.length === 0 || list2.length === 0) return 0;
+  
+  // Normalize both lists to lowercase for comparison
+  const norm1 = list1.map((item) => item.trim().toLowerCase());
+  const norm2 = list2.map((item) => item.trim().toLowerCase());
+  
+  const overlapping = norm1.filter((item) => norm2.includes(item));
+  
+  return Math.min(maxBonus, overlapping.length * bonusPerMatch);
+}
+
+/**
+ * Calculates the great-circle distance between two points on the Earth's surface (in kilometers)
+ */
+export function calculateDistanceInKm(
+  coords1: [number, number] | undefined,
+  coords2: [number, number] | undefined
+): number | null {
+  if (!coords1 || !coords2) return null;
+  if (coords1.length !== 2 || coords2.length !== 2) return null;
+  
+  const lon1 = coords1[0];
+  const lat1 = coords1[1];
+  const lon2 = coords2[0];
+  const lat2 = coords2[1];
+  
+  if (lon1 === 0 && lat1 === 0) return null;
+  if (lon2 === 0 && lat2 === 0) return null;
+  if (lon1 === lon2 && lat1 === lat2) return 0;
+  
+  const R = 6371; // Radius of the Earth in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+      
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c;
+  
+  return distance;
+}
+
+/**
+ * Returns proximity bonus points based on distance (in km)
+ */
+export function calculateProximityBonus(distanceKm: number | null): number {
+  if (distanceKm === null) return 0;
+  
+  if (distanceKm <= 5) return 10;
+  if (distanceKm <= 15) return 7;
+  if (distanceKm <= 50) return 4;
+  
+  return 0;
+}
+
+/**
  * Extended vibe data interface for matching
  */
 export interface VibeCardData {
@@ -304,7 +378,12 @@ export interface VibeCardData {
   energyLevel: number;
   currentIntent: string[];
   contextTag?: string;
-  interactionBoundary: string;
+  conversationalPreferences: string;
+  askMeAbout?: string[];
+  feelingOptions?: string[];
+  hobbies?: string[];
+  personalities?: string[];
+  coordinates?: [number, number];
 }
 
 /**
@@ -326,8 +405,19 @@ export function calculateVibeSimilarity(
   const intent2 = 'currentIntent' in vibe2 ? vibe2.currentIntent : score2.intent;
   const contextTag1 = 'contextTag' in vibe1 ? vibe1.contextTag : undefined;
   const contextTag2 = 'contextTag' in vibe2 ? vibe2.contextTag : undefined;
-  const boundary1 = 'interactionBoundary' in vibe1 ? vibe1.interactionBoundary : undefined;
-  const boundary2 = 'interactionBoundary' in vibe2 ? vibe2.interactionBoundary : undefined;
+  const boundary1 = 'conversationalPreferences' in vibe1 ? (vibe1 as any).conversationalPreferences : undefined;
+  const boundary2 = 'conversationalPreferences' in vibe2 ? (vibe2 as any).conversationalPreferences : undefined;
+
+  const askMeAbout1 = 'askMeAbout' in vibe1 ? (vibe1 as any).askMeAbout : undefined;
+  const askMeAbout2 = 'askMeAbout' in vibe2 ? (vibe2 as any).askMeAbout : undefined;
+  const feelingOptions1 = 'feelingOptions' in vibe1 ? (vibe1 as any).feelingOptions : undefined;
+  const feelingOptions2 = 'feelingOptions' in vibe2 ? (vibe2 as any).feelingOptions : undefined;
+  const hobbies1 = 'hobbies' in vibe1 ? (vibe1 as any).hobbies : undefined;
+  const hobbies2 = 'hobbies' in vibe2 ? (vibe2 as any).hobbies : undefined;
+  const personalities1 = 'personalities' in vibe1 ? (vibe1 as any).personalities : undefined;
+  const personalities2 = 'personalities' in vibe2 ? (vibe2 as any).personalities : undefined;
+  const coords1 = 'coordinates' in vibe1 ? (vibe1 as any).coordinates : undefined;
+  const coords2 = 'coordinates' in vibe2 ? (vibe2 as any).coordinates : undefined;
 
   const moodSim = calculateMoodSimilarity(score1.mood, score2.mood);
   const energySim = calculateEnergySimilarity(score1.energy, score2.energy);
@@ -344,6 +434,13 @@ export function calculateVibeSimilarity(
     : 70; // Default neutral if not available
   
   const contextBonus = calculateContextTagBonus(contextTag1, contextTag2);
+  const interestsBonus = calculateOverlapBonus(askMeAbout1, askMeAbout2, 5, 10);
+  const hobbiesBonus = calculateOverlapBonus(hobbies1, hobbies2, 5, 10);
+  const personalityBonus = calculateOverlapBonus(personalities1, personalities2, 5, 10);
+  const feelingsBonus = calculateOverlapBonus(feelingOptions1, feelingOptions2, 5, 10);
+
+  const distanceKm = calculateDistanceInKm(coords1, coords2);
+  const proximityBonus = calculateProximityBonus(distanceKm);
 
   // Weighted average (updated weights)
   const weights = {
@@ -363,14 +460,26 @@ export function calculateVibeSimilarity(
     energyLevelSim * weights.energyLevel +
     boundarySim * weights.boundary;
 
-  // Add context bonus (up to 20 points)
-  similarity = Math.min(100, similarity + contextBonus);
+  // Add bonuses (interests, hobbies, personality, feelings, proximity, context tag)
+  similarity = Math.min(
+    100, 
+    similarity + contextBonus + interestsBonus + hobbiesBonus + personalityBonus + feelingsBonus + proximityBonus
+  );
 
   // Determine category
-  let category: "Mood Twins" | "Near Your Energy" | "Similar Vibes" | null = null;
+  let category: "Mood Twins" | "Near Your Energy" | "Similar Vibes" | "Interests Twin" | null = null;
   
+  const interestsOverlap = (askMeAbout1 && askMeAbout2)
+    ? askMeAbout1.filter((x: string) => askMeAbout2.map((i: string) => i.toLowerCase()).includes(x.toLowerCase())).length
+    : 0;
+  const hobbiesOverlap = (hobbies1 && hobbies2)
+    ? hobbies1.filter((x: string) => hobbies2.map((i: string) => i.toLowerCase()).includes(x.toLowerCase())).length
+    : 0;
+
   if (similarity >= 85 && moodSim >= 90) {
     category = "Mood Twins";
+  } else if (interestsOverlap + hobbiesOverlap >= 3 && similarity >= 75) {
+    category = "Interests Twin";
   } else if (energyLevelSim >= 80 && energyLevel1 !== undefined && energyLevel2 !== undefined && Math.abs(energyLevel1 - energyLevel2) <= 2) {
     category = "Near Your Energy";
   } else if (similarity >= 70) {
@@ -388,6 +497,11 @@ export function calculateVibeSimilarity(
       energyLevel: Math.round(energyLevelSim),
       boundary: Math.round(boundarySim),
       contextBonus: Math.round(contextBonus),
+      interestsBonus: Math.round(interestsBonus),
+      hobbiesBonus: Math.round(hobbiesBonus),
+      personalityBonus: Math.round(personalityBonus),
+      feelingsBonus: Math.round(feelingsBonus),
+      proximityBonus: Math.round(proximityBonus),
     },
   };
 }

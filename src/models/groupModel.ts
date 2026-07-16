@@ -8,7 +8,7 @@ export type GPCategory = typeof GP_CATEGORIES[number];
 export const VIBE_GP_SUBTYPES = ["Fun", "Chill", "Overthinker", "Chaos", "Calm", "Random Talk"] as const;
 export const MOVIE_GP_SUBTYPES = ["Movie Name", "Genre"] as const;
 export const ANIME_GP_SUBTYPES = ["Anime Name", "Genre"] as const;
-export const OTHER_GP_SUBTYPES = ["Standup", "Travel", "Trip", "Tech Talk", "Music", "Sports"] as const;
+export const OTHER_GP_SUBTYPES = ["Standup", "Travel", "Trip", "Tech Talk", "Music", "Sports", "Other"] as const;
 
 // Movie/Anime Genres
 export const MOVIE_GENRES = ["Horror", "Action", "Sci-Fi", "Comedy", "Drama", "Romance", "Thriller", "Fantasy"] as const;
@@ -42,6 +42,41 @@ export const CREATION_REASONS = [
   "Want a safe chill space",
 ] as const;
 
+// Looking For Options
+export const LOOKING_FOR_OPTIONS = [
+  "🤝 New Friends",
+  "😂 Fun Conversations",
+  "🎬 Movie Discussions",
+  "🎌 Anime Discussions",
+  "🎮 Gaming Squad",
+  "📚 Study Group",
+  "💻 Coding Friends",
+  "🎵 Music Buddies",
+  "☕ Coffee Chats",
+  "❤️ Relationship Advice",
+  "🧠 Deep Talks",
+  "🎤 Voice Calls",
+  "🌍 Travel Buddies",
+] as const;
+
+// Who is this GP for Options
+export const WHO_IS_IT_FOR_OPTIONS = [
+  "🌍 Everyone",
+  "🎓 Students",
+  "💻 Developers",
+  "🎮 Gamers",
+  "🎬 Movie Lovers",
+  "🎌 Anime Fans",
+  "🎵 Music Lovers",
+  "📚 Readers",
+  "🏋️ Fitness Enthusiasts",
+  "☕ Coffee Lovers",
+  "✈️ Travelers",
+  "🎨 Creators",
+  "🚀 Entrepreneurs",
+] as const;
+
+
 // Permanent conversion voting schema
 const permanentVoteSchema = new mongoose.Schema({
   user: {
@@ -59,6 +94,30 @@ const permanentVoteSchema = new mongoose.Schema({
     default: Date.now,
   },
 }, { _id: false });
+
+// GP Message Schema
+const gpMessageSchema = new mongoose.Schema(
+  {
+    sender: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    text: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 1000,
+    },
+    readBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+  },
+  { timestamps: true }
+);
 
 // GP Schema
 const groupSchema = new mongoose.Schema(
@@ -118,6 +177,33 @@ const groupSchema = new mongoose.Schema(
       default: "",
     },
 
+    // Looking For Selection
+    lookingFor: {
+      type: [String],
+      required: true,
+      validate: {
+        validator: function (v: string[]) {
+          return v.length > 0 && v.length <= 3;
+        },
+        message: "Must select 1-3 options for 'Looking For'",
+      },
+      default: ["🤝 New Friends"],
+    },
+
+    // Target Audience (Who is this GP for)
+    whoIsItFor: {
+      type: [String],
+      required: true,
+      validate: {
+        validator: function (v: string[]) {
+          return v.length > 0;
+        },
+        message: "Must select at least 1 option for 'Who is this GP for'",
+      },
+      default: ["🌍 Everyone"],
+    },
+
+
     // Location
     location: {
       type: {
@@ -155,6 +241,7 @@ const groupSchema = new mongoose.Schema(
       min: 2,
       max: 5,
     },
+    messages: [gpMessageSchema],
 
     // Creator
     createdBy: {

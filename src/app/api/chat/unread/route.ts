@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     const userIdStr = user._id.toString();
 
     const chats = await Chat.find(
-      { participants: user._id },
+      { participants: user._id, isListenChat: { $ne: true } },
       { messages: 1 }
     ).lean();
 

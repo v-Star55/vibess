@@ -1,10 +1,10 @@
-'use client'
-import { useState, useEffect } from "react";
+"use client";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { verifyOTP } from "../../lib/api";
 
-export default function verifyEmail() {
+function VerifyEmailContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const email = searchParams.get("email") || "";
@@ -86,5 +86,19 @@ export default function verifyEmail() {
             </div>
         </div>
 
+    );
+}
+
+export default function VerifyEmail() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-black px-4">
+                <div className="w-full max-w-md bg-white shadow-xl rounded-2xl p-8 text-center text-gray-900">
+                    Loading...
+                </div>
+            </div>
+        }>
+            <VerifyEmailContent />
+        </Suspense>
     );
 }

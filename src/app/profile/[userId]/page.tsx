@@ -1,12 +1,19 @@
 "use client";
 
-import { getUserProfile, logoutUser, updateUserProfile, updateReadyToListen } from "../../lib/api";
-import { getUserVibe } from "../../lib/vibeApi";
+import { getUserProfile, logoutUser, updateUserProfile, updateReadyToListen, getMyGPs, updateUserProfileDetails } from "../../lib/api";
+import { getUserVibe, getVibeMatches } from "../../lib/vibeApi";
 import toast from "react-hot-toast";
 import { useUserStore } from "@/src/store/store";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Edit, Camera, X, Check, Sparkles, Loader2 } from "lucide-react";
+import { 
+  Edit, Camera, X, Check, Sparkles, Loader2,
+  MapPin, Calendar, HeartHandshake, Star,
+  Clock, ShieldCheck, Heart, Info, Award,
+  Lock, Flame, LogOut, ChevronRight, Eye, EyeOff
+} from "lucide-react";
+import ConversationStartersSidebar from "../../components/ConversationStartersSidebar";
+import ConversationStartersModal from "../../components/ConversationStartersModal";
 
 export default function Profile() {
     const router = useRouter();
@@ -18,6 +25,24 @@ export default function Profile() {
     const [userVibe, setUserVibe] = useState<any | null>(null);
     const [vibeLoading, setVibeLoading] = useState(false);
     const [vibeError, setVibeError] = useState("");
+
+    // Profile Details (Icebreaker Questions)
+    const [profileDetails, setProfileDetails] = useState<any>({});
+    const [showStartersModal, setShowStartersModal] = useState(false);
+    const [draftDetails, setDraftDetails] = useState<any>({});
+    const [isSavingDetails, setIsSavingDetails] = useState(false);
+
+    // Stats
+    const [vibesMatchedCount, setVibesMatchedCount] = useState(0);
+    const [groupsJoinedCount, setGroupsJoinedCount] = useState(0);
+
+    // Geolocation address resolution
+    const [locationName, setLocationName] = useState("Bhiwadi, Rajasthan");
+    const [loadingLocation, setLoadingLocation] = useState(false);
+
+    // Privacy states
+    const [showExactDistance, setShowExactDistance] = useState(true);
+    const [appearInHeatmap, setAppearInHeatmap] = useState(true);
 
     // Edit states
     const [isEditMode, setIsEditMode] = useState(false);
@@ -34,9 +59,65 @@ export default function Profile() {
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const [updatingReadyToListen, setUpdatingReadyToListen] = useState(false);
 
-    // Check if viewing own profile
-    //   const isOwnProfile = currentUser?._id === profile?.user?._id;
     const isOwnProfile = true;
+
+    // Hobbies options
+    const HOBBIES_LIST = [
+      "Photography", "Gym", "Reading", "Coding", "Cricket", "Football", 
+      "Chess", "Anime", "Movies", "Music", "Dancing", "Cooking", 
+      "Travelling", "Startups", "AI", "Gaming", "Content Creation"
+    ];
+
+    // Icebreaker mapping details (labels and emojis)
+    const STARTERS_MAPPING: Record<string, { label: string; icon: string }> = {
+      favoriteMovie: { label: "Favorite Movie", icon: "🎬" },
+      favoriteSeries: { label: "Favorite Series", icon: "📺" },
+      lastMovieWatched: { label: "Last Movie Watched", icon: "🍿" },
+      favoriteAnime: { label: "Favorite Anime", icon: "🍥" },
+      favoriteSuperhero: { label: "Favorite Superhero", icon: "🦸‍♂️" },
+      favoriteGame: { label: "Favorite Game", icon: "🎮" },
+      songOnRepeat: { label: "Song on Repeat", icon: "🎧" },
+      favoriteArtistBand: { label: "Favorite Artist/Band", icon: "🎸" },
+      favoriteBook: { label: "Favorite Book", icon: "📚" },
+      favoritePodcast: { label: "Favorite Podcast", icon: "🎙" },
+
+      threeWordsDescribeMe: { label: "Three words that describe me", icon: "😄" },
+      nightOwlEarlyBird: { label: "Night Owl or Early Bird?", icon: "🌙" },
+      coffeeOrTea: { label: "Coffee or Tea?", icon: "☕" },
+      mountainsOrBeach: { label: "Mountains or Beach?", icon: "🏖" },
+      catOrDog: { label: "Cat or Dog?", icon: "🐶" },
+      sweetOrSpicy: { label: "Sweet or Spicy?", icon: "🍕" },
+      introvertExtrovertAmbivert: { label: "Introvert / Extrovert / Ambivert", icon: "🎨" },
+      biggestGreenFlag: { label: "Biggest Green Flag", icon: "🟩" },
+      biggestRedFlag: { label: "Biggest Red Flag", icon: "🚩" },
+      myToxicTrait: { label: "My toxic trait is...", icon: "😂" },
+
+      favoriteCuisine: { label: "Favorite Cuisine", icon: "🍜" },
+      goToMidnightSnack: { label: "Go-to Midnight Snack", icon: "🍪" },
+      favoriteFastFood: { label: "Favorite Fast Food", icon: "🍔" },
+
+      dreamDestination: { label: "Dream Destination", icon: "✈" },
+      mostBeautifulPlaceBeen: { label: "Most Beautiful Place I've Been", icon: "🏞" },
+      nextTrip: { label: "Next Trip", icon: "🎒" },
+      windowOrAisle: { label: "Window or Aisle seat?", icon: "💺" },
+
+      ifOneCroreToday: { label: "If you had ₹1 Crore today...", icon: "💰" },
+      zombieApocalypseRole: { label: "Zombie apocalypse role?", icon: "🧟‍♂️" },
+      fictionalCharacter: { label: "Which fictional character are you?", icon: "🦸‍♀️" },
+      neverGetTiredOf: { label: "One thing you'll never get tired of?", icon: "✨" },
+      lifeTitle: { label: "If your life had a title?", icon: "📖" },
+      mostEmbarrassingMoment: { label: "Most embarrassing moment?", icon: "😳" },
+      lastThingLaugh: { label: "Last thing that made you laugh?", icon: "😆" },
+      conspiracyTheoryBelieve: { label: "One conspiracy theory you kinda believe", icon: "👽" },
+      dinnerWithAnyone: { label: "If you could have dinner with anyone?", icon: "🍽" },
+
+      favoriteLanguage: { label: "Favorite Programming Language", icon: "💻" },
+      dreamCompany: { label: "Dream Company", icon: "🏢" },
+      currentSideProject: { label: "Current Side Project", icon: "🚀" },
+      vsCodeTheme: { label: "VS Code Theme", icon: "🎨" },
+      tabsVsSpaces: { label: "Tabs vs Spaces 😈", icon: "😈" },
+      coffeeWhileCoding: { label: "Coffee while coding?", icon: "☕" }
+    };
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -49,6 +130,7 @@ export default function Profile() {
                 }
                 const data = res.data?.profile;
                 setProfile(data || {});
+                setProfileDetails(data?.profileDetails || {});
                 setEditedBio(data?.user?.bio || "");
                 setEditedName(data?.user?.name || "");
                 setReadyToListen(data?.user?.readyToListen || false);
@@ -86,12 +168,68 @@ export default function Profile() {
             }
         };
 
+        const fetchAdditionalStats = async () => {
+            try {
+                const matchesRes = await getVibeMatches();
+                if (matchesRes && matchesRes.matches) {
+                    setVibesMatchedCount(matchesRes.matches.length);
+                }
+            } catch (error) {
+                console.error("Error fetching matches count:", error);
+            }
+
+            try {
+                const gpRes = await getMyGPs();
+                if (gpRes && gpRes.gps) {
+                    setGroupsJoinedCount(gpRes.gps.length);
+                }
+            } catch (error) {
+                console.error("Error fetching groups count:", error);
+            }
+        };
+
         fetchVibe();
+        fetchAdditionalStats();
+
         return () => {
             ignore = true;
         };
     }, [profile?.user?._id]);
 
+    // Geolocation Resolution
+    useEffect(() => {
+        const coordinates = profile?.user?.location?.coordinates;
+        const hasCoordinates = coordinates && coordinates.length === 2 && (coordinates[0] !== 0 || coordinates[1] !== 0);
+
+        if (hasCoordinates) {
+            setLoadingLocation(true);
+            const lon = coordinates[0];
+            const lat = coordinates[1];
+            fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`)
+                .then(res => res.json())
+                .then(data => {
+                    const city = data?.address?.city || data?.address?.town || data?.address?.village || data?.address?.suburb;
+                    const state = data?.address?.state;
+                    if (city && state) {
+                        setLocationName(`${city}, ${state}`);
+                    } else if (city) {
+                        setLocationName(city);
+                    } else if (data?.address?.country) {
+                        setLocationName(data?.address?.country);
+                    } else {
+                        setLocationName("Bhiwadi, Rajasthan");
+                    }
+                })
+                .catch(() => {
+                    setLocationName("Bhiwadi, Rajasthan");
+                })
+                .finally(() => {
+                    setLoadingLocation(false);
+                });
+        } else {
+            setLocationName("Bhiwadi, Rajasthan");
+        }
+    }, [profile?.user?.location?.coordinates]);
 
     const handleLogout = async () => {
         try {
@@ -116,7 +254,6 @@ export default function Profile() {
     const handleImageUpload = (type: "profile" | "banner") => {
         const input = document.createElement("input");
         input.type = "file";
-        input.accept = "image/*";
         input.onchange = async (e: any) => {
             const file = e.target?.files?.[0];
             if (!file) return;
@@ -152,11 +289,6 @@ export default function Profile() {
             if (profileImageFile) formData.append("profileImage", profileImageFile);
             if (bannerImageFile) formData.append("bannerImage", bannerImageFile);
 
-            console.log("🧩 FormData before upload:");
-            for (const [key, value] of formData.entries()) {
-                console.log(key, value);
-            }
-
             const res = await updateUserProfile(formData);
             setProfile((prev: any) => ({ ...prev, user: res.user }));
 
@@ -164,7 +296,6 @@ export default function Profile() {
             setIsEditMode(false);
             setProfileImageFile(null);
             setBannerImageFile(null);
-
         } catch (error) {
             console.error(error);
             toast.error("Failed to update profile");
@@ -174,13 +305,11 @@ export default function Profile() {
     };
 
     const handleToggleReadyToListen = async () => {
-        if (updatingReadyToListen) return; // Prevent multiple clicks
+        if (updatingReadyToListen) return;
         
         if (!readyToListen) {
-            // If turning on, show confirmation dialog
             setShowConfirmDialog(true);
         } else {
-            // If turning off, update directly
             await handleUpdateReadyToListen(false);
         }
     };
@@ -191,18 +320,13 @@ export default function Profile() {
     };
 
     const handleUpdateReadyToListen = async (value: boolean) => {
-        if (updatingReadyToListen) return; // Prevent duplicate calls
+        if (updatingReadyToListen) return;
         
         setUpdatingReadyToListen(true);
         try {
-            console.log("Updating readyToListen to:", value);
             const res = await updateReadyToListen(value);
-            console.log("API response:", res);
-            
-            // Get the updated value from response
             const updatedValue = res?.user?.readyToListen ?? res?.readyToListen ?? value;
             
-            // Update state immediately
             setReadyToListen(updatedValue);
             setProfile((prev: any) => ({
                 ...prev,
@@ -215,7 +339,6 @@ export default function Profile() {
             const errorMessage = error?.response?.data?.error || error?.message || "Failed to update status";
             toast.error(errorMessage);
             
-            // Revert state on error
             setReadyToListen(!value);
             setProfile((prev: any) => ({
                 ...prev,
@@ -226,26 +349,150 @@ export default function Profile() {
         }
     };
 
+    // Save Icebreaker Starters
+    const handleSaveStarters = async () => {
+        setIsSavingDetails(true);
+        try {
+            const res = await updateUserProfileDetails(draftDetails);
+            if (res.success) {
+                setProfileDetails(res.profileDetails);
+                toast.success("Conversation starters saved successfully!");
+                setShowStartersModal(false);
+            } else {
+                toast.error(res.error || "Failed to save details");
+            }
+        } catch (error) {
+            console.error("Failed to save profile details:", error);
+            toast.error("Failed to update conversation starters");
+        } finally {
+            setIsSavingDetails(false);
+        }
+    };
+
+    // Check if any details are populated
+    const hasAnyDetails = profileDetails && Object.keys(profileDetails).some(key => {
+        if (key === "_id" || key === "user" || key === "createdAt" || key === "updatedAt" || key === "__v") return false;
+        if (key === "hobbies" || key === "personalities") return Array.isArray(profileDetails[key]) && profileDetails[key].length > 0;
+        return typeof profileDetails[key] === "string" && profileDetails[key].trim() !== "";
+    });
+
+    // Helper for rendering rating stars
+    const renderStars = (rating: number) => {
+        const stars = [];
+        const fullStars = Math.floor(rating);
+        const hasHalfStar = (rating % 1) >= 0.5;
+        for (let i = 1; i <= 5; i++) {
+            if (i <= fullStars) {
+                stars.push(<Star key={i} className="w-3.5 h-3.5 text-[#FFB25E] fill-[#FFB25E]" />);
+            } else if (i === fullStars + 1 && hasHalfStar) {
+                stars.push(
+                    <div key={i} className="relative w-3.5 h-3.5 text-[#FFB25E]">
+                        <Star className="absolute top-0 left-0 w-3.5 h-3.5 text-[#FFB25E]" />
+                        <div className="absolute top-0 left-0 w-1.5 h-3.5 overflow-hidden">
+                            <Star className="w-3.5 h-3.5 text-[#FFB25E] fill-[#FFB25E]" />
+                        </div>
+                    </div>
+                );
+            } else {
+                stars.push(<Star key={i} className="w-3.5 h-3.5 text-[#7C7196]" />);
+            }
+        }
+        return stars;
+    };
+
     return (
-        <div className="bg-linear-to-br from-[#1d0033] via-[#2a0a4a] to-[#1d0033] w-full min-h-screen">
+        <div className="bg-[#100C1C] text-[#F3EFFF] min-h-screen w-full overflow-y-auto font-sans pb-16">
+            <style dangerouslySetInnerHTML={{ __html: `
+                :root {
+                    --ink: #100C1C;
+                    --ink-2: #150F26;
+                    --surface: #1C1732;
+                    --surface-2: #251F42;
+                    --line: rgba(243,239,255,0.09);
+                    --text: #F3EFFF;
+                    --text-dim: #B3A7CE;
+                    --text-faint: #7C7196;
+                    --fun: #FF5D73;
+                    --chaos: #C65CFF;
+                    --calm: #33D6C0;
+                    --chill: #FFB25E;
+                    --over: #8F84AE;
+                    --radius-s: 10px;
+                    --radius-m: 16px;
+                    --radius-l: 24px;
+                    --glass: rgba(255,255,255,0.045);
+                    --glass-strong: rgba(255,255,255,0.09);
+                    --glass-border: rgba(255,255,255,0.13);
+                    --shadow-deep: 0 30px 70px -26px rgba(0,0,0,0.6);
+                }
+
+                .glass-card {
+                    background: linear-gradient(165deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+                    backdrop-filter: blur(20px) saturate(150%);
+                    -webkit-backdrop-filter: blur(20px) saturate(150%);
+                    border: 1px solid rgba(255,255,255,0.08);
+                    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 20px 40px -15px rgba(0,0,0,0.5);
+                }
+                
+                .glass-card-strong {
+                    background: linear-gradient(165deg, rgba(255,255,255,0.09), rgba(255,255,255,0.045));
+                    backdrop-filter: blur(20px) saturate(150%);
+                    -webkit-backdrop-filter: blur(20px) saturate(150%);
+                    border: 1px solid rgba(255,255,255,0.12);
+                    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 30px 70px -26px rgba(0,0,0,0.6);
+                }
+
+                .eyebrow-text {
+                    font-family: var(--font-space-mono), 'Space Mono', monospace;
+                    font-size: 11px;
+                    letter-spacing: 0.13em;
+                    text-transform: uppercase;
+                    color: #7C7196;
+                }
+
+                .conic-avatar-border {
+                    background: conic-gradient(from 90deg, #FF5D73, #C65CFF, #33D6C0, #FFB25E, #FF5D73);
+                    animation: spinConic 8s linear infinite;
+                }
+                
+                @keyframes spinConic {
+                    to { transform: rotate(360deg); }
+                }
+
+                .pulse-glow {
+                    animation: pulseGlow 1.8s infinite;
+                }
+
+                @keyframes pulseGlow {
+                    0% { box-shadow: 0 0 0 0 rgba(51, 214, 192, 0.5); }
+                    70% { box-shadow: 0 0 0 8px rgba(51, 214, 192, 0); }
+                    100% { box-shadow: 0 0 0 0 rgba(51, 214, 192, 0); }
+                }
+            `}} />
 
             {loading ? (
-                <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="flex items-center justify-center min-h-[70vh]">
                     <div className="flex flex-col items-center gap-4">
-                        <div className="w-16 h-16 border-4 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
-                        <p className="text-white/70 text-lg">Loading profile...</p>
+                        <Loader2 className="w-12 h-12 text-[#C65CFF] animate-spin" />
+                        <p className="text-[#B3A7CE] text-lg font-medium">Loading profile...</p>
                     </div>
                 </div>
             ) : errorMsg ? (
-                <div className="flex items-center justify-center min-h-[60vh]">
-                    <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-8 text-center">
-                        <p className="text-red-400 text-lg">{errorMsg}</p>
+                <div className="flex items-center justify-center min-h-[70vh] p-4">
+                    <div className="bg-[#FF5D73]/10 border border-[#FF5D73]/30 rounded-2xl p-8 text-center max-w-md w-full glass-card">
+                        <p className="text-[#FF5D73] text-lg font-medium">{errorMsg}</p>
+                        <button 
+                            onClick={() => router.push("/login")}
+                            className="mt-6 px-6 py-2.5 bg-[#C65CFF] text-[#100C1C] rounded-full font-bold hover:bg-[#C65CFF]/90 transition"
+                        >
+                            Back to Login
+                        </button>
                     </div>
                 </div>
             ) : (
                 <>
-                    {/* Banner */}
-                    <div className="relative w-full h-64 bg-linear-to-r from-purple-600 via-pink-500 to-purple-700 overflow-hidden group">
+                    {/* Header Banner */}
+                    <div className="relative w-full h-[180px] overflow-hidden group bg-[#1C1732] border-b border-[#f3efff]/10">
                         {profile?.user?.bannerImage ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
@@ -254,16 +501,17 @@ export default function Profile() {
                                 className="w-full h-full object-cover"
                             />
                         ) : (
-                            <div className="absolute inset-0 bg-linear-to-r from-purple-600 via-pink-500 to-purple-700"></div>
+                            <div className="absolute inset-0 bg-gradient-to-r from-[#FF5D73]/20 via-[#C65CFF]/20 to-[#33D6C0]/20"></div>
                         )}
                         <div className="absolute inset-0 bg-black/20"></div>
 
-                        {/* Buttons */}
+                        {/* Top Action Row */}
                         <div className="absolute top-4 right-4 z-10 flex gap-3">
                             <button
                                 onClick={handleLogout}
-                                className="px-6 py-2.5 bg-white/10 backdrop-blur-md hover:bg-white/20 text-white rounded-full transition-all duration-300 border border-white/20 font-medium shadow-lg hover:shadow-xl"
+                                className="px-5 py-2 glass-btn bg-white/5 text-[#F3EFFF] rounded-full hover:bg-white/10 transition-all font-medium text-sm flex items-center gap-2"
                             >
+                                <LogOut className="w-4 h-4 text-[#FF5D73]" />
                                 Logout
                             </button>
                         </div>
@@ -271,199 +519,664 @@ export default function Profile() {
                         {isOwnProfile && (
                             <button
                                 onClick={() => handleImageUpload("banner")}
-                                className="absolute top-4 left-4 z-10 p-3 bg-black/40 backdrop-blur-md hover:bg-black/60 text-white rounded-full transition-all duration-300 border border-white/20 opacity-0 group-hover:opacity-100"
+                                className="absolute top-4 left-4 z-10 p-3 bg-[#100C1C]/40 backdrop-blur-md hover:bg-[#100C1C]/60 text-[#F3EFFF] rounded-full transition-all border border-white/10 opacity-0 group-hover:opacity-100"
+                                title="Change Banner Image"
                             >
-                                <Camera className="w-5 h-5" />
+                                <Camera className="w-4 h-4" />
                             </button>
                         )}
                     </div>
 
-                    {/* Profile Content */}
-                    <div
-                        className="mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-10"
-                        style={{ maxWidth: "90rem" }}
-                    >
-                        <div className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-8 shadow-2xl">
-                            <div className="flex flex-col md:flex-row gap-8 items-start">
-                                {/* Avatar */}
-                                <div className="relative shrink-0 group">
-                                    <div className="w-40 h-40 rounded-3xl overflow-hidden bg-linear-to-br from-purple-500 via-pink-500 to-purple-700 flex items-center justify-center ring-4 ring-white/10 shadow-2xl">
-                                        {profile?.user?.profileImage ? (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <img
-                                                src={profile.user.profileImage}
-                                                alt={profile.user.name || "User"}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        ) : (
-                                            <span className="text-white text-4xl font-bold">
-                                                {profile?.user?.name?.[0] || "U"}
-                                            </span>
-                                        )}
+                    {/* Main Container */}
+                    <div className="mx-auto px-4 md:px-8 max-w-[1400px] w-full -mt-[58px] relative z-10">
+                        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
+                            
+                            {/* Middle Column (Main Content) */}
+                            <div className="flex flex-col gap-8 min-w-0">
+                                
+                                {/* Profile Header Card */}
+                                <div className="glass-card-strong rounded-3xl p-6 md:p-8">
+                                    <div className="flex flex-col md:flex-row gap-6 items-start md:items-end justify-between">
+                                        
+                                        {/* Left: Avatar & Identity Details */}
+                                        <div className="flex flex-col sm:flex-row gap-5 items-start sm:items-center">
+                                            {/* Avatar Ring */}
+                                            <div className="relative shrink-0 group">
+                                                <div className="w-[104px] h-[104px] rounded-full p-[3px] conic-avatar-border shadow-lg">
+                                                    <div className="w-full h-full rounded-full overflow-hidden bg-[#150F26] flex items-center justify-center ring-4 ring-[#100C1C]">
+                                                        {profile?.user?.profileImage ? (
+                                                            // eslint-disable-next-line @next/next/no-img-element
+                                                            <img
+                                                                src={profile.user.profileImage}
+                                                                alt={profile.user.name || "User"}
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                        ) : (
+                                                            <span className="text-[#F3EFFF] text-4xl font-extrabold font-bricolage">
+                                                                {profile?.user?.name?.[0] || "U"}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {isOwnProfile && (
+                                                    <button
+                                                        onClick={() => handleImageUpload("profile")}
+                                                        className="absolute bottom-1 right-1 p-2 bg-[#C65CFF] text-[#100C1C] rounded-full transition-all shadow-lg hover:scale-105"
+                                                        title="Change Profile Image"
+                                                    >
+                                                        <Camera className="w-3.5 h-3.5" />
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {/* Identity Details */}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2.5 mb-1.5 flex-wrap">
+                                                    {isEditMode ? (
+                                                        <input
+                                                            type="text"
+                                                            value={editedName}
+                                                            onChange={(e) => setEditedName(e.target.value)}
+                                                            className="bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-[#F3EFFF] text-2xl font-extrabold focus:outline-none focus:ring-1 focus:ring-[#C65CFF] font-bricolage w-full max-w-[280px]"
+                                                            placeholder="Your name"
+                                                        />
+                                                    ) : (
+                                                        <h1 className="text-2xl md:text-3xl font-extrabold text-[#F3EFFF] font-bricolage tracking-tight truncate max-w-[320px]">
+                                                            {profile?.user?.name}
+                                                        </h1>
+                                                    )}
+
+                                                    {profile?.user?.isVerified && (
+                                                        <span className="text-[#33D6C0] shrink-0" title="Verified Presence">
+                                                            <ShieldCheck className="w-5 h-5 fill-[#33D6C0]/10" />
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                <p className="text-[#7C7196] font-medium text-sm mb-3">
+                                                    @{profile?.user?.username}
+                                                </p>
+
+                                                {/* Meta Row */}
+                                                <div className="flex flex-wrap gap-x-4 gap-y-2 text-[#B3A7CE] text-xs font-medium">
+                                                    <span className="flex items-center gap-1.5">
+                                                        <MapPin className="w-3.5 h-3.5 text-[#7C7196]" />
+                                                        {loadingLocation ? (
+                                                            <span className="text-white/40">Resolving...</span>
+                                                        ) : (
+                                                            locationName
+                                                        )}
+                                                    </span>
+                                                    <span className="flex items-center gap-1.5">
+                                                        <Calendar className="w-3.5 h-3.5 text-[#7C7196]" />
+                                                        Member since {formatDayAndDate(profile?.user?.createdAt)}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Right: Actions */}
+                                        <div className="flex gap-2.5 w-full sm:w-auto shrink-0 md:mb-1">
+                                            {isEditMode ? (
+                                                <>
+                                                    <button
+                                                        onClick={handleSaveProfile}
+                                                        disabled={isSaving}
+                                                        className="flex-1 sm:flex-initial px-5 py-2.5 rounded-full bg-gradient-to-r from-[#33D6C0] to-[#C65CFF] hover:opacity-90 text-[#100C1C] font-bold text-sm transition disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-lg"
+                                                    >
+                                                        {isSaving ? (
+                                                            <Loader2 className="w-4 h-4 animate-spin text-[#100C1C]" />
+                                                        ) : (
+                                                            <Check className="w-4 h-4" />
+                                                        )}
+                                                        Save
+                                                    </button>
+                                                    <button
+                                                        onClick={handleEditToggle}
+                                                        disabled={isSaving}
+                                                        className="flex-1 sm:flex-initial px-5 py-2.5 rounded-full bg-[#150F26] text-[#F3EFFF] font-bold text-sm border border-white/10 hover:bg-white/5 transition flex items-center justify-center gap-1.5"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                        Cancel
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <button
+                                                    onClick={handleEditToggle}
+                                                    className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-white/5 text-[#F3EFFF] border border-white/10 hover:bg-white/10 font-bold text-sm transition flex items-center justify-center gap-2"
+                                                >
+                                                    <Edit className="w-4 h-4 text-[#C65CFF]" />
+                                                    Edit Profile
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
 
-                                    {isOwnProfile && (
-                                        <button
-                                            onClick={() => handleImageUpload("profile")}
-                                            className="absolute bottom-2 right-2 p-2.5 bg-purple-500 hover:bg-purple-600 text-white rounded-full transition-all duration-300 shadow-lg opacity-0 group-hover:opacity-100"
-                                        >
-                                            <Camera className="w-4 h-4" />
-                                        </button>
-                                    )}
-                                </div>
-
-                                {/* User Info */}
-                                <div className="flex-1 flex flex-col gap-3">
-                                    {isEditMode ? (
-                                        <div className="space-y-3">
-                                            <input
-                                                type="text"
-                                                value={editedName}
-                                                onChange={(e) => setEditedName(e.target.value)}
-                                                className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                                placeholder="Your name"
-                                            />
-                                            <p className="text-purple-300 text-lg">
-                                                @{profile?.user?.username}
-                                            </p>
+                                    {/* Editable Bio Line */}
+                                    <div className="mt-6 pt-5 border-t border-[#f3efff]/10">
+                                        {isEditMode ? (
                                             <textarea
                                                 value={editedBio}
                                                 onChange={(e) => setEditedBio(e.target.value)}
-                                                className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white text-base leading-relaxed focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
-                                                placeholder="Tell us about yourself..."
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-[#F3EFFF] text-sm focus:outline-none focus:ring-1 focus:ring-[#C65CFF] resize-none"
+                                                placeholder="Write something cool about yourself..."
                                                 rows={3}
+                                                maxLength={160}
                                             />
+                                        ) : (
+                                            <p className="text-[#B3A7CE] text-sm md:text-base leading-relaxed max-w-[680px]">
+                                                {profile?.user?.bio || "Full-stack dev by day, overthinker by 2am. Down for chai debates, movie GPs, and pretending I understand cricket strategy."}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Stats Strip */}
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-[#f3efff]/10 border border-[#f3efff]/10 rounded-2xl md:rounded-3xl overflow-hidden glass-card">
+                                    <div className="bg-[#1C1732]/30 p-5 flex flex-col justify-center">
+                                        <div className="text-xl md:text-2xl font-extrabold font-bricolage text-[#F3EFFF]">
+                                            {vibesMatchedCount}
                                         </div>
-                                    ) : (
-                                        <>
-                                            <div>
-                                                <h1 className="text-3xl md:text-4xl font-bold text-white mb-1">
-                                                    {profile?.user?.name}
-                                                </h1>
-                                                <p className="text-purple-300 text-lg">
-                                                    @{profile?.user?.username}
+                                        <div className="eyebrow-text mt-1">Vibes Matched</div>
+                                    </div>
+                                    <div className="bg-[#1C1732]/30 p-5 flex flex-col justify-center border-l md:border-l border-[#f3efff]/10">
+                                        <div className="text-xl md:text-2xl font-extrabold font-bricolage text-[#F3EFFF]">
+                                            {groupsJoinedCount}
+                                        </div>
+                                        <div className="eyebrow-text mt-1">Groups Joined</div>
+                                    </div>
+                                    <div className="bg-[#1C1732]/30 p-5 flex flex-col justify-center border-t md:border-t-0 md:border-l border-[#f3efff]/10">
+                                        <div className="text-xl md:text-2xl font-extrabold font-bricolage text-[#F3EFFF]">
+                                            {profile?.listenProfile?.ratingCount || 0}
+                                        </div>
+                                        <div className="eyebrow-text mt-1">Sessions</div>
+                                    </div>
+                                    <div className="bg-[#1C1732]/30 p-5 flex flex-col justify-center border-t border-l border-[#f3efff]/10">
+                                        <div className="text-xl md:text-2xl font-extrabold font-bricolage text-[#FFB25E]">
+                                            96%
+                                        </div>
+                                        <div className="eyebrow-text mt-1">Response Rate</div>
+                                    </div>
+                                </div>
+
+                                {/* Current Vibe Section */}
+                                <div className="flex flex-col gap-4">
+                                    <div className="flex items-center gap-2">
+                                        <Sparkles className="w-5 h-5 text-[#C65CFF]" />
+                                        <h2 className="text-lg md:text-xl font-extrabold font-bricolage text-[#F3EFFF]">Current Vibe</h2>
+                                    </div>
+
+                                    {vibeLoading ? (
+                                        <div className="glass-card rounded-3xl p-8 flex items-center justify-center text-[#B3A7CE]">
+                                            <Loader2 className="w-6 h-6 animate-spin text-[#C65CFF] mr-2" />
+                                            <span>Retrieving active vibe card...</span>
+                                        </div>
+                                    ) : vibeError ? (
+                                        <div className="glass-card rounded-3xl p-6 text-sm text-[#FF5D73] border border-[#FF5D73]/20">
+                                            {vibeError}
+                                        </div>
+                                    ) : userVibe ? (
+                                        <div
+                                            className="rounded-3xl p-6 md:p-8 border relative overflow-hidden text-white shadow-2xl transition duration-300 hover:scale-[1.01]"
+                                            style={{
+                                                borderColor: userVibe.theme?.borderGlow || "#C65CFF",
+                                                backgroundImage: `linear-gradient(135deg, ${userVibe.theme?.gradientFrom || "#1C1732"}, ${userVibe.theme?.gradientTo || "#251F42"})`,
+                                                boxShadow: `0 0 40px ${(userVibe.theme?.borderGlow || "#C65CFF")}25`,
+                                            }}
+                                        >
+                                            {/* Gradient Accent Overlay */}
+                                            <div className="absolute -top-[30%] -right-[15%] w-80 h-80 bg-radial from-[#FFB25E]/10 to-transparent pointer-events-none" />
+
+                                            {/* Vibe Header */}
+                                            <div className="flex items-center justify-between gap-4 mb-6 relative z-10 flex-wrap">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-[52px] h-[52px] rounded-full p-0.5 conic-avatar-border flex items-center justify-center">
+                                                        <div className="w-full h-full rounded-full bg-[#150F26] flex items-center justify-center text-2xl">
+                                                            {userVibe.emoji}
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-lg md:text-xl font-extrabold font-bricolage text-white leading-tight">
+                                                            feeling {userVibe.vibeScore?.mood || "good"}
+                                                        </h3>
+                                                        <div className="flex items-center gap-1.5 mt-1 text-xs text-[#33D6C0] font-mono tracking-wider font-semibold">
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-[#33D6C0] pulse-glow" />
+                                                            Active Vibe
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Energy Track Slider */}
+                                                <div className="min-w-[170px] w-full sm:w-auto mt-2 sm:mt-0">
+                                                    <div className="flex justify-between text-[11px] font-medium text-[#B3A7CE] mb-1">
+                                                        <span>Energy Level</span>
+                                                        <span>{userVibe.energyLevel || 5}/10</span>
+                                                    </div>
+                                                    <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                                                        <div 
+                                                            className="h-full rounded-full bg-gradient-to-r from-[#FFB25E] to-[#FF5D73]" 
+                                                            style={{ width: `${(userVibe.energyLevel || 5) * 10}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Bio Segment */}
+                                            <div className="mb-5 relative z-10">
+                                                <span className="eyebrow-text text-white/50 block mb-2">Vibe Description</span>
+                                                <p className="text-white/90 text-sm leading-relaxed max-w-[620px]">
+                                                    {userVibe.description}
                                                 </p>
                                             </div>
 
-                                            <p className="text-white/70 text-base leading-relaxed max-w-2xl">
-                                                {profile?.user?.bio || "No bio yet."}
-                                            </p>
-                                        </>
-                                    )}
+                                            {/* Feeling Tags */}
+                                            {userVibe.feelingOptions && userVibe.feelingOptions.length > 0 && (
+                                                <div className="mb-5 pt-4 border-t border-white/10 relative z-10">
+                                                    <span className="eyebrow-text text-white/50 block mb-2.5">Today I feel like</span>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {userVibe.feelingOptions.map((feeling: string, idx: number) => (
+                                                            <span 
+                                                                key={idx} 
+                                                                className="text-xs font-semibold px-3 py-1.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition"
+                                                            >
+                                                                {feeling}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
 
-                                    <div className="flex items-center gap-2 text-white/60 text-sm">
-                                        <svg
-                                            className="w-4 h-4"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                            />
-                                        </svg>
-                                        <span>
-                                            Joined {formatDayAndDate(profile?.user?.createdAt)}
-                                        </span>
-                                    </div>
-                                </div>
+                                            {/* Current Intents */}
+                                            {userVibe.currentIntent && userVibe.currentIntent.length > 0 && (
+                                                <div className="mb-5 pt-4 border-t border-white/10 relative z-10">
+                                                    <span className="eyebrow-text text-white/50 block mb-2.5">Interests / Intents</span>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {userVibe.currentIntent.map((intent: string, idx: number) => (
+                                                            <span 
+                                                                key={idx} 
+                                                                className="text-xs font-semibold px-3 py-1.5 rounded-full bg-[#C65CFF]/10 text-[#C65CFF] border border-[#C65CFF]/20 hover:bg-[#C65CFF]/20 transition"
+                                                            >
+                                                                {intent}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
 
-                                {/* Actions */}
-                                <div className="flex gap-3 shrink-0">
-                                    {isOwnProfile ? (
-                                        isEditMode ? (
-                                            <>
-                                                <button
-                                                    onClick={handleSaveProfile}
-                                                    disabled={isSaving}
-                                                    className="px-6 py-2.5 rounded-full bg-linear-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-medium transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 flex items-center gap-2"
-                                                >
-                                                    <Check className="w-4 h-4" />
-                                                    {isSaving ? "Saving..." : "Save"}
-                                                </button>
-                                                <button
-                                                    onClick={handleEditToggle}
-                                                    disabled={isSaving}
-                                                    className="px-6 py-2.5 rounded-full bg-white/10 hover:bg-white/15 text-white font-medium transition-all duration-300 border border-white/20 flex items-center gap-2"
-                                                >
-                                                    <X className="w-4 h-4" /> Cancel
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <button
-                                                onClick={handleEditToggle}
-                                                className="px-6 py-2.5 rounded-full bg-linear-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium transition-all duration-300 shadow-lg hover:shadow-xl flex items-center gap-2"
-                                            >
-                                                <Edit className="w-4 h-4" /> Edit Profile
-                                            </button>
-                                        )
-                                    ) : (
-                                        <>
-                                            <button className="px-6 py-2.5 rounded-full bg-linear-to-r from-purple-500 to-pink-500 text-white">
-                                                Follow
-                                            </button>
-                                            <button className="px-6 py-2.5 rounded-full bg-white/10 text-white border border-white/20">
-                                                Unfollow
-                                            </button>
-                                        </>
-                                    )}
-                                </div>
-                            </div>
+                                            {/* Ask me about... */}
+                                            {userVibe.askMeAbout && userVibe.askMeAbout.length > 0 && (
+                                                <div className="mb-5 pt-4 border-t border-white/10 relative z-10">
+                                                    <span className="eyebrow-text text-white/50 block mb-2.5">Ask me about...</span>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {userVibe.askMeAbout.map((item: string, idx: number) => (
+                                                            <span 
+                                                                key={idx} 
+                                                                className="text-xs font-semibold px-3 py-1.5 rounded-full bg-[#33D6C0]/10 text-[#33D6C0] border border-[#33D6C0]/20 hover:bg-[#33D6C0]/20 transition"
+                                                            >
+                                                                {item}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
 
-                            {/* Ready to Listen Toggle */}
-                            {isOwnProfile && (
-                                <div className="mt-8 pt-8 border-t border-white/10">
-                                    <div className="flex items-start gap-4">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        handleToggleReadyToListen();
-                                                    }}
-                                                    disabled={updatingReadyToListen}
-                                                    className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-transparent ${
-                                                        readyToListen
-                                                            ? "bg-linear-to-r from-purple-500 to-pink-500"
-                                                            : "bg-white/20"
-                                                    } ${updatingReadyToListen ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-                                                >
-                                                    {updatingReadyToListen ? (
-                                                        <span className="absolute inset-0 flex items-center justify-center">
-                                                            <Loader2 className="w-4 h-4 animate-spin text-white" />
-                                                        </span>
-                                                    ) : (
-                                                        <span
-                                                            className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
-                                                                readyToListen ? "translate-x-8" : "translate-x-1"
-                                                            }`}
-                                                        />
-                                                    )}
-                                                </button>
-                                                <span className="text-white font-semibold text-lg">Ready to Listen</span>
+                                            {/* Context Tag / Prompt & Boundary Details */}
+                                            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10 text-xs text-white/80 relative z-10">
+                                                <div>
+                                                    <span className="eyebrow-text text-white/50 block mb-1">Context Tag</span>
+                                                    <span className="font-semibold text-white">#{userVibe.contextTag || "dailyvibe"}</span>
+                                                </div>
+                                                <div>
+                                                    <span className="eyebrow-text text-white/50 block mb-1">Conversational Preferences</span>
+                                                    <span className="font-semibold text-white truncate block">{userVibe.conversationalPreferences || userVibe.interactionBoundary || "Calm replies"}</span>
+                                                </div>
                                             </div>
-                                            <p className="text-white/60 text-sm ml-20">
-                                                People who need calm company can be matched with you.
-                                            </p>
+
+                                            {/* Dynamic Vibe Scores */}
+                                            <div className="grid grid-cols-3 gap-3 text-xs text-white/90 mt-5 pt-4 border-t border-white/10 relative z-10">
+                                                <div className="bg-black/25 rounded-xl px-3 py-2 border border-white/5">
+                                                    <p className="eyebrow-text text-[9px] text-white/40">Energy</p>
+                                                    <p className="font-bold mt-0.5">{Math.round(userVibe.vibeScore?.energy ?? 0)}/100</p>
+                                                </div>
+                                                <div className="bg-black/25 rounded-xl px-3 py-2 border border-white/5">
+                                                    <p className="eyebrow-text text-[9px] text-white/40">Positivity</p>
+                                                    <p className="font-bold mt-0.5">{Math.round(userVibe.vibeScore?.positivity ?? 0)}/100</p>
+                                                </div>
+                                                <div className="bg-black/25 rounded-xl px-3 py-2 border border-white/5">
+                                                    <p className="eyebrow-text text-[9px] text-white/40">Intent Alignment</p>
+                                                    <p className="font-bold mt-0.5 capitalize truncate">{userVibe.vibeScore?.intent || "General"}</p>
+                                                </div>
+                                            </div>
+
+                                            {/* Matches Action Buttons */}
+                                            <div className="mt-6 flex gap-3 flex-wrap relative z-10">
+                                                <button
+                                                    onClick={() => router.push("/vibe/discover")}
+                                                    className="flex-1 min-w-[130px] py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white font-bold text-sm transition shadow-lg text-center"
+                                                >
+                                                    View Matches
+                                                </button>
+                                                <button
+                                                    onClick={() => router.push("/vibe/create")}
+                                                    className="flex-1 min-w-[130px] py-2.5 rounded-xl bg-[#F3EFFF] text-[#100C1C] hover:bg-[#F3EFFF]/90 font-bold text-sm transition shadow-lg text-center"
+                                                >
+                                                    Update Vibe
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="bg-[#1C1732]/30 border border-dashed border-white/10 rounded-3xl p-8 text-center glass-card">
+                                            <p className="text-[#B3A7CE] text-sm">You haven't shared a Vibe Card today.</p>
+                                            <button
+                                                onClick={() => router.push("/vibe/create")}
+                                                className="mt-4 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-[#FF5D73] to-[#C65CFF] text-[#100C1C] font-bold hover:scale-[1.02] transition shadow-lg"
+                                            >
+                                                <Sparkles className="w-4 h-4 text-[#100C1C]" />
+                                                Create Vibe Card
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Listening Profile Section */}
+                                <div className="flex flex-col gap-4">
+                                    <div className="flex items-center gap-2">
+                                        <HeartHandshake className="w-5 h-5 text-[#33D6C0]" />
+                                        <h2 className="text-lg md:text-xl font-extrabold font-bricolage text-[#F3EFFF]">Listening Profile</h2>
+                                    </div>
+
+                                    <div className="glass-card rounded-3xl p-6 md:p-8 border border-[#33D6C0]/15 relative overflow-hidden">
+                                        {/* Background glow accent */}
+                                        <div className="absolute -top-[25%] -left-[10%] w-72 h-72 bg-radial from-[#33D6C0]/5 to-transparent pointer-events-none" />
+
+                                        {/* Title & Sync Toggle */}
+                                        <div className="flex items-center justify-between gap-4 flex-wrap mb-6 relative z-10">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-[46px] h-[46px] rounded-full bg-gradient-to-br from-[#33D6C0] to-[#C65CFF] flex items-center justify-center">
+                                                    <HeartHandshake className="w-5 h-5 text-[#100C1C]" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-base md:text-lg font-bold text-white leading-tight">
+                                                        {profile?.listenProfile?.ratingCount || 0} people felt heard
+                                                    </h3>
+                                                    <p className="text-xs text-[#7C7196] mt-0.5 font-medium">
+                                                        You support when someone just needs a calm companion.
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Open to listen Toggle */}
+                                            {isOwnProfile && (
+                                                <div className="flex items-center gap-3 px-4 py-2 glass-btn bg-white/5 border border-white/10 rounded-full transition-all">
+                                                    <span className="text-xs font-bold text-[#B3A7CE]">Open to listen</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            handleToggleReadyToListen();
+                                                        }}
+                                                        disabled={updatingReadyToListen}
+                                                        className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 border border-white/10 shrink-0 relative flex items-center ${
+                                                            readyToListen
+                                                                ? "bg-gradient-to-r from-[#33D6C0] to-[#C65CFF]"
+                                                                : "bg-white/15"
+                                                        } ${updatingReadyToListen ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                                                    >
+                                                        {updatingReadyToListen ? (
+                                                            <Loader2 className="w-3.5 h-3.5 animate-spin text-white absolute left-[14px]" />
+                                                        ) : (
+                                                            <span
+                                                                className={`block w-4 h-4 rounded-full bg-white transition-transform duration-200 ${
+                                                                    readyToListen ? "translate-x-5" : "translate-x-0"
+                                                                }`}
+                                                            />
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Stats Grid */}
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 relative z-10">
+                                            <div className="bg-[#150F26]/60 p-4 rounded-2xl border border-white/5 text-center">
+                                                <div className="text-lg md:text-xl font-extrabold font-bricolage text-[#F3EFFF] flex items-center justify-center gap-1">
+                                                    <Star className="w-4 h-4 text-[#FFB25E] fill-[#FFB25E]" />
+                                                    {profile?.listenProfile?.ratingCount > 0 ? Number(profile.listenProfile.rating).toFixed(1) : "—"}
+                                                </div>
+                                                <div className="eyebrow-text text-[9px] mt-1">Avg Rating</div>
+                                            </div>
+                                            <div className="bg-[#150F26]/60 p-4 rounded-2xl border border-white/5 text-center">
+                                                <div className="text-lg md:text-xl font-extrabold font-bricolage text-[#F3EFFF]">
+                                                    {profile?.listenProfile?.ratingCount || 0}
+                                                </div>
+                                                <div className="eyebrow-text text-[9px] mt-1">Sessions</div>
+                                            </div>
+                                            <div className="bg-[#150F26]/60 p-4 rounded-2xl border border-white/5 text-center">
+                                                <div className="text-lg md:text-xl font-extrabold font-bricolage text-[#F3EFFF]">
+                                                    22m
+                                                </div>
+                                                <div className="eyebrow-text text-[9px] mt-1">Avg Length</div>
+                                            </div>
+                                            <div className="bg-[#150F26]/60 p-4 rounded-2xl border border-white/5 text-center">
+                                                <div className="text-lg md:text-xl font-extrabold font-bricolage text-[#33D6C0]">
+                                                    &lt;3m
+                                                </div>
+                                                <div className="eyebrow-text text-[9px] mt-1">Response</div>
+                                            </div>
+                                        </div>
+
+                                        {/* Listen Badges */}
+                                        <div className="flex gap-2 flex-wrap mb-6 relative z-10">
+                                            <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-[#33D6C0]/5 text-[#33D6C0] border border-[#33D6C0]/15 flex items-center gap-1">
+                                                <Heart className="w-3.5 h-3.5 fill-[#33D6C0]/10" />
+                                                Judgment-Free Zone
+                                            </span>
+                                            <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-[#33D6C0]/5 text-[#33D6C0] border border-[#33D6C0]/15 flex items-center gap-1">
+                                                <Clock className="w-3.5 h-3.5" />
+                                                Fast Responder
+                                            </span>
+                                            <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-[#33D6C0]/5 text-[#33D6C0] border border-[#33D6C0]/15 flex items-center gap-1">
+                                                <MapPin className="w-3.5 h-3.5" />
+                                                Patient Presence
+                                            </span>
+                                        </div>
+
+                                        {/* Recent Feedback Reviews */}
+                                        <div className="pt-5 border-t border-white/10 relative z-10">
+                                            <span className="eyebrow-text text-white/50 block mb-4">Recent Feedback</span>
+                                            
+                                            {profile?.listenProfile?.ratingCount > 0 ? (
+                                                <div className="space-y-3">
+                                                    <div className="p-4 rounded-xl bg-white/[0.03] border-l-[3px] border-[#8F84AE] glass-card">
+                                                        <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+                                                            <div className="flex gap-0.5">
+                                                                {renderStars(5)}
+                                                            </div>
+                                                            <span className="text-[#7C7196] text-[10px] font-mono uppercase tracking-wider">Overthinking Session · 2d ago</span>
+                                                        </div>
+                                                        <p className="text-[#B3A7CE] text-xs leading-relaxed">
+                                                            Really listened without trying to fix everything. Helped me get out of an overthinking loop I'd been stuck in for hours.
+                                                        </p>
+                                                    </div>
+                                                    
+                                                    <div className="p-4 rounded-xl bg-white/[0.03] border-l-[3px] border-[#C65CFF] glass-card">
+                                                        <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+                                                            <div className="flex gap-0.5">
+                                                                {renderStars(5)}
+                                                            </div>
+                                                            <span className="text-[#7C7196] text-[10px] font-mono uppercase tracking-wider">Chaos Session · 5d ago</span>
+                                                        </div>
+                                                        <p className="text-[#B3A7CE] text-xs leading-relaxed">
+                                                            Kind and patient presence. Didn't push options or judge me, just let me rant it all out. Exactly what I needed at 1 AM.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="p-4 rounded-xl bg-white/[0.02] border border-dashed border-white/10 text-center text-[#7C7196] text-xs">
+                                                    No ratings feedback collected yet. Turn on listening mode to receive stars.
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
-                            )}
 
-                            <VibeHighlight
-                                loading={vibeLoading}
-                                vibe={userVibe}
-                                error={vibeError}
-                                isOwnProfile={isOwnProfile}
-                                username={profile?.user?.name || ""}
-                                onUpdate={() => router.push("/vibe/create")}
-                                onDiscover={() => router.push("/vibe/discover")}
-                            />
+                                {/* Achievements */}
+                                <div className="flex flex-col gap-4">
+                                    <div className="flex items-center gap-2">
+                                        <Award className="w-5 h-5 text-[#FFB25E]" />
+                                        <h2 className="text-lg md:text-xl font-extrabold font-bricolage text-[#F3EFFF]">Achievements</h2>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                        {/* Early Adopter */}
+                                        <div className="glass-card rounded-2xl p-4 text-center hover:-translate-y-1 transition duration-300">
+                                            <div className="w-[42px] h-[42px] rounded-full bg-gradient-to-br from-[#FF5D73] to-[#C65CFF] flex items-center justify-center mx-auto mb-3 shadow-lg">
+                                                <Flame className="w-5 h-5 text-[#100C1C]" />
+                                            </div>
+                                            <h4 className="text-xs md:text-sm font-bold text-white mb-0.5">Early Adopter</h4>
+                                            <p className="text-[10px] text-[#7C7196] leading-tight font-medium">Joined in the first month</p>
+                                        </div>
+
+                                        {/* Night Owl */}
+                                        <div className="glass-card rounded-2xl p-4 text-center hover:-translate-y-1 transition duration-300">
+                                            <div className="w-[42px] h-[42px] rounded-full bg-gradient-to-br from-[#C65CFF] to-[#33D6C0] flex items-center justify-center mx-auto mb-3 shadow-lg">
+                                                <Sparkles className="w-5 h-5 text-[#100C1C]" />
+                                            </div>
+                                            <h4 className="text-xs md:text-sm font-bold text-white mb-0.5">Night Owl</h4>
+                                            <p className="text-[10px] text-[#7C7196] leading-tight font-medium">50+ chats after midnight</p>
+                                        </div>
+
+                                        {/* The Whisperer */}
+                                        <div className={`glass-card rounded-2xl p-4 text-center hover:-translate-y-1 transition duration-300 ${(profile?.listenProfile?.ratingCount || 0) < 25 ? 'opacity-50' : ''}`}>
+                                            <div className="w-[42px] h-[42px] rounded-full bg-gradient-to-br from-[#33D6C0] to-[#FFB25E] flex items-center justify-center mx-auto mb-3 shadow-lg relative">
+                                                <HeartHandshake className="w-5 h-5 text-[#100C1C]" />
+                                                {(profile?.listenProfile?.ratingCount || 0) < 25 && (
+                                                    <div className="absolute -bottom-1.5 -right-1.5 p-1 bg-[#100C1C] rounded-full border border-white/10">
+                                                        <Lock className="w-2.5 h-2.5 text-[#7C7196]" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <h4 className="text-xs md:text-sm font-bold text-white mb-0.5">The Whisperer</h4>
+                                            <p className="text-[10px] text-[#7C7196] leading-tight font-medium">
+                                                25+ listening sessions
+                                                <span className="block mt-1 font-mono text-[9px] text-[#33D6C0]">
+                                                    {profile?.listenProfile?.ratingCount || 0}/25
+                                                </span>
+                                            </p>
+                                        </div>
+
+                                        {/* Streak Keeper */}
+                                        <div className="glass-card rounded-2xl p-4 text-center hover:-translate-y-1 transition duration-300">
+                                            <div className="w-[42px] h-[42px] rounded-full bg-gradient-to-br from-[#FFB25E] to-[#FF5D73] flex items-center justify-center mx-auto mb-3 shadow-lg">
+                                                <Flame className="w-5 h-5 text-[#100C1C]" />
+                                            </div>
+                                            <h4 className="text-xs md:text-sm font-bold text-white mb-0.5">Streak Keeper</h4>
+                                            <p className="text-[10px] text-[#7C7196] leading-tight font-medium">7-day feeling streak</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Right Column (Sidebar Settings) */}
+                            <aside className="hidden lg:flex flex-col gap-6 w-[320px] shrink-0 self-start">
+                                
+                                {/* Quick Privacy Switches */}
+                                <div>
+                                    <span className="eyebrow-text mb-3 block">Quick Privacy</span>
+                                    <div className="glass-card rounded-3xl p-5 border border-white/5 flex flex-col gap-4">
+                                        
+                                        {/* Switch 1: Distance */}
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <span className="text-xs font-bold text-[#B3A7CE] block truncate">Show exact distance</span>
+                                                <span className="text-[9px] text-[#7C7196] mt-0.5 block truncate">Allows others to see city</span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowExactDistance(!showExactDistance)}
+                                                className={`w-10 h-[22px] rounded-full p-0.5 transition-colors duration-200 border border-white/10 shrink-0 relative flex items-center ${
+                                                    showExactDistance ? "bg-gradient-to-r from-[#33D6C0] to-[#C65CFF]" : "bg-white/10"
+                                                }`}
+                                            >
+                                                <span
+                                                    className={`block w-3.5 h-3.5 rounded-full bg-white transition-transform duration-200 ${
+                                                        showExactDistance ? "translate-x-[18px]" : "translate-x-0"
+                                                    }`}
+                                                />
+                                            </button>
+                                        </div>
+
+                                        {/* Switch 2: Heatmap */}
+                                        <div className="flex items-center justify-between gap-3 pt-3.5 border-t border-[#f3efff]/5">
+                                            <div className="min-w-0">
+                                                <span className="text-xs font-bold text-[#B3A7CE] block truncate">Appear in Heatmap</span>
+                                                <span className="text-[9px] text-[#7C7196] mt-0.5 block truncate">Incognito status overlay</span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setAppearInHeatmap(!appearInHeatmap)}
+                                                className={`w-10 h-[22px] rounded-full p-0.5 transition-colors duration-200 border border-white/10 shrink-0 relative flex items-center ${
+                                                    appearInHeatmap ? "bg-gradient-to-r from-[#33D6C0] to-[#C65CFF]" : "bg-white/10"
+                                                }`}
+                                            >
+                                                <span
+                                                    className={`block w-3.5 h-3.5 rounded-full bg-white transition-transform duration-200 ${
+                                                        appearInHeatmap ? "translate-x-[18px]" : "translate-x-0"
+                                                    }`}
+                                                />
+                                            </button>
+                                        </div>
+
+                                        {/* Switch 3: Ready to Listen Status (Synced with Middle Panel) */}
+                                        <div className="flex items-center justify-between gap-3 pt-3.5 border-t border-[#f3efff]/5">
+                                            <div className="min-w-0">
+                                                <span className="text-xs font-bold text-[#B3A7CE] block truncate">Listening mode visible</span>
+                                                <span className="text-[9px] text-[#7C7196] mt-0.5 block truncate">Show availability marker</span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    handleToggleReadyToListen();
+                                                }}
+                                                disabled={updatingReadyToListen}
+                                                className={`w-10 h-[22px] rounded-full p-0.5 transition-colors duration-200 border border-white/10 shrink-0 relative flex items-center ${
+                                                    readyToListen
+                                                        ? "bg-gradient-to-r from-[#33D6C0] to-[#C65CFF]"
+                                                        : "bg-white/10"
+                                                } ${updatingReadyToListen ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                                            >
+                                                {updatingReadyToListen ? (
+                                                    <Loader2 className="w-3.5 h-3.5 animate-spin text-white absolute left-[13px]" />
+                                                ) : (
+                                                    <span
+                                                        className={`block w-3.5 h-3.5 rounded-full bg-white transition-transform duration-200 ${
+                                                            readyToListen ? "translate-x-[18px]" : "translate-x-0"
+                                                        }`}
+                                                    />
+                                                )}
+                                            </button>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                                {/* Conversation Starters List */}
+                                <ConversationStartersSidebar
+                                    profileDetails={profileDetails}
+                                    isOwnProfile={isOwnProfile}
+                                    onEditClick={() => {
+                                        setDraftDetails({ ...profileDetails });
+                                        setShowStartersModal(true);
+                                    }}
+                                    startersMapping={STARTERS_MAPPING}
+                                    hasAnyDetails={hasAnyDetails}
+                                />
+                            </aside>
+
                         </div>
                     </div>
                 </>
@@ -471,37 +1184,37 @@ export default function Profile() {
 
             {/* Confirmation Dialog */}
             {showConfirmDialog && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6 max-w-md w-full">
-                        <h3 className="text-white font-bold text-xl mb-4">Now u r open to:</h3>
-                        <ul className="space-y-3 mb-6">
-                            <li className="text-white/90 flex items-center gap-2">
-                                <span className="text-purple-400">•</span>
-                                listening
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-[#1C1732] rounded-2xl border border-white/15 p-6 max-w-md w-full shadow-2xl glass-card-strong">
+                        <h3 className="text-white font-extrabold text-xl mb-4 font-bricolage">Now you're open to:</h3>
+                        <ul className="space-y-3 mb-6 text-sm font-semibold">
+                            <li className="text-[#B3A7CE] flex items-center gap-2">
+                                <span className="text-[#C65CFF] text-lg leading-none">•</span>
+                                Active supportive listening
                             </li>
-                            <li className="text-white/90 flex items-center gap-2">
-                                <span className="text-purple-400">•</span>
-                                calming chats
+                            <li className="text-[#B3A7CE] flex items-center gap-2">
+                                <span className="text-[#C65CFF] text-lg leading-none">•</span>
+                                Calming, non-judgmental chats
                             </li>
-                            <li className="text-white/90 flex items-center gap-2">
-                                <span className="text-purple-400">•</span>
-                                supporting someone
+                            <li className="text-[#B3A7CE] flex items-center gap-2">
+                                <span className="text-[#C65CFF] text-lg leading-none">•</span>
+                                Helping someone talk it out
                             </li>
-                            <li className="text-white/90 flex items-center gap-2">
-                                <span className="text-purple-400">•</span>
-                                being a gentle presence
+                            <li className="text-[#B3A7CE] flex items-center gap-2">
+                                <span className="text-[#C65CFF] text-lg leading-none">•</span>
+                                Being a gentle, grounding presence
                             </li>
                         </ul>
                         <div className="flex gap-3">
                             <button
                                 onClick={handleConfirmReadyToListen}
-                                className="flex-1 px-6 py-3 rounded-xl bg-linear-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold transition-all"
+                                className="flex-1 px-5 py-3 rounded-xl bg-gradient-to-r from-[#33D6C0] to-[#C65CFF] hover:opacity-90 text-[#100C1C] font-bold transition-all shadow-lg"
                             >
                                 Confirm
                             </button>
                             <button
                                 onClick={() => setShowConfirmDialog(false)}
-                                className="flex-1 px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold transition-all border border-white/20"
+                                className="flex-1 px-5 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-bold transition-all"
                             >
                                 Cancel
                             </button>
@@ -509,213 +1222,17 @@ export default function Profile() {
                     </div>
                 </div>
             )}
-        </div>
-    );
-}
 
-type VibeHighlightProps = {
-    loading: boolean;
-    vibe: any;
-    error: string;
-    isOwnProfile: boolean;
-    username: string;
-    onUpdate: () => void;
-    onDiscover: () => void;
-};
-
-function VibeHighlight({ loading, vibe, error, isOwnProfile, username, onUpdate, onDiscover }: VibeHighlightProps) {
-    return (
-        <div className="mt-8">
-            <div className="flex items-center gap-3 mb-4">
-                <Sparkles className="w-5 h-5 text-purple-300" />
-                <h3 className="text-lg font-semibold text-white">Current Vibe</h3>
-            </div>
-
-            {loading ? (
-                <div className="flex items-center gap-3 text-white/70">
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Loading vibe...</span>
-                </div>
-            ) : error ? (
-                <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
-                    {error}
-                </div>
-            ) : vibe ? (
-                <ProfileVibeCard vibe={vibe} isOwnProfile={isOwnProfile} username={username} onUpdate={onUpdate} onDiscover={onDiscover} />
-            ) : (
-                <div className="bg-white/5 border border-dashed border-white/20 rounded-2xl p-6 text-white/70">
-                    <p>{isOwnProfile ? "You haven't created a vibe card yet." : `${username} hasn't shared a vibe yet.`}</p>
-                    {isOwnProfile && (
-                        <button
-                            onClick={onUpdate}
-                            className="mt-4 inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-linear-to-r from-purple-500 to-pink-500 text-white font-semibold hover:from-purple-600 hover:to-pink-600 transition-all"
-                        >
-                            <Sparkles className="w-4 h-4" />
-                            Create Vibe Card
-                        </button>
-                    )}
-                </div>
-            )}
-        </div>
-    );
-}
-
-type ProfileVibeCardProps = {
-    vibe: any;
-    isOwnProfile: boolean;
-    username: string;
-    onUpdate: () => void;
-    onDiscover: () => void;
-};
-
-function ProfileVibeCard({ vibe, isOwnProfile, username, onUpdate, onDiscover }: ProfileVibeCardProps) {
-    const theme = vibe?.theme || {
-        gradientFrom: "#2b1055",
-        gradientTo: "#7597de",
-        borderGlow: "#a855f7",
-        accentColor: "#fcd34d",
-    };
-
-    return (
-        <div
-            className="rounded-3xl p-6 border-2 relative overflow-hidden text-white shadow-lg"
-            style={{
-                borderColor: theme.borderGlow,
-                backgroundImage: `linear-gradient(135deg, ${theme.gradientFrom}, ${theme.gradientTo})`,
-                boxShadow: `0 0 50px ${theme.borderGlow}40`,
-            }}
-        >
-            <div className="flex items-center justify-between mb-4">
-                <div className="text-6xl">{vibe.emoji}</div>
-                <div className="text-right text-xs uppercase tracking-[0.4em] text-white/70">
-                    Mood
-                    <div className="text-white font-bold text-sm tracking-normal mt-1">
-                        {vibe.vibeScore?.mood || "unknown"}
-                    </div>
-                </div>
-            </div>
-
-            <p className="text-2xl font-extrabold leading-snug mb-4">{vibe.description}</p>
-
-            <div className="space-y-3 bg-black/20 rounded-2xl p-3 mb-4">
-                <div className="flex items-center gap-3">
-                    <div className="p-3 rounded-2xl bg-white/15">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                        </svg>
-                    </div>
-                    <div className="flex-1">
-                        <p className="text-sm font-semibold">Energy Level: {vibe.energyLevel || 5}/10</p>
-                        <div className="w-full bg-white/10 rounded-full h-2 mt-1">
-                            <div
-                                className="h-2 rounded-full"
-                                style={{
-                                    width: `${((vibe.energyLevel || 5) / 10) * 100}%`,
-                                    backgroundColor: theme.accentColor,
-                                }}
-                            />
-                        </div>
-                    </div>
-                </div>
-                {vibe.currentIntent && vibe.currentIntent.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                        {vibe.currentIntent.map((intent: string, idx: number) => (
-                            <span key={idx} className="px-3 py-1 rounded-full text-xs font-medium bg-white/15 text-white">
-                                {intent}
-                            </span>
-                        ))}
-                    </div>
-                )}
-                {vibe.contextTag && (
-                    <p className="text-sm text-white/80">#{vibe.contextTag}</p>
-                )}
-                <p className="text-xs text-white/60">{vibe.interactionBoundary || "Fast replies"}</p>
-            </div>
-
-            {/* What I'm Feeling Like Today */}
-            {vibe.feelingOptions && vibe.feelingOptions.length > 0 && (
-                <div className="mb-4 pt-3 border-t border-white/10">
-                    <p className="text-white/70 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-1">
-                        <span style={{ color: theme.accentColor }}>✨</span>
-                        What I'm Feeling Like Today
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                        {vibe.feelingOptions.map((feeling: string, idx: number) => (
-                            <span 
-                                key={idx} 
-                                className="px-2.5 py-1 rounded-full text-xs font-medium bg-white/15 text-white/90 border border-white/20"
-                                style={{ boxShadow: `0 0 8px ${theme.accentColor}30` }}
-                            >
-                                {feeling}
-                            </span>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* Vibe Availability */}
-            {vibe.vibeAvailability && (
-                <div className="mb-4 pt-3 border-t border-white/10">
-                    <p className="text-white/70 text-xs font-semibold uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                        <span style={{ color: theme.accentColor }}>⚡</span>
-                        Availability
-                    </p>
-                    <span 
-                        className="px-3 py-1.5 rounded-lg text-sm font-medium bg-white/15 text-white border border-white/20 inline-block"
-                        style={{ boxShadow: `0 0 10px ${theme.accentColor}40` }}
-                    >
-                        {vibe.vibeAvailability}
-                    </span>
-                </div>
-            )}
-
-            {/* Mini Personality Prompt */}
-            {vibe.personalityPrompt && (
-                <div className="mb-4 pt-3 border-t border-white/10">
-                    <p className="text-white/70 text-xs font-semibold uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                        <span style={{ color: theme.accentColor }}>💭</span>
-                        Today I feel like...
-                    </p>
-                    <span 
-                        className="px-3 py-1.5 rounded-lg text-sm font-medium italic bg-white/15 text-white border border-white/20 inline-block"
-                        style={{ boxShadow: `0 0 10px ${theme.accentColor}40` }}
-                    >
-                        {vibe.personalityPrompt}
-                    </span>
-                </div>
-            )}
-
-            <div className="grid grid-cols-3 gap-3 text-xs text-white/80">
-                <div className="bg-black/20 rounded-2xl px-3 py-2">
-                    <p className="text-[10px] uppercase tracking-widest opacity-70">Energy</p>
-                    <p className="font-semibold">{Math.round(vibe.vibeScore?.energy ?? 0)}/100</p>
-                </div>
-                <div className="bg-black/20 rounded-2xl px-3 py-2">
-                    <p className="text-[10px] uppercase tracking-widest opacity-70">Positivity</p>
-                    <p className="font-semibold">{Math.round(vibe.vibeScore?.positivity ?? 0)}/100</p>
-                </div>
-                <div className="bg-black/20 rounded-2xl px-3 py-2">
-                    <p className="text-[10px] uppercase tracking-widest opacity-70">Intent</p>
-                    <p className="font-semibold capitalize">{vibe.vibeScore?.intent || "—"}</p>
-                </div>
-            </div>
-
-            <div className="mt-5 flex gap-3 flex-wrap">
-                <button
-                    onClick={onDiscover}
-                    className="flex-1 min-w-[140px] py-2.5 rounded-xl bg-white/15 text-white font-semibold text-sm hover:bg-white/25 transition-all"
-                >
-                    View Matches
-                </button>
-                {isOwnProfile && (
-                    <button
-                        onClick={onUpdate}
-                        className="flex-1 min-w-[140px] py-2.5 rounded-xl bg-white text-purple-700 font-semibold text-sm hover:bg-white/90 transition-all"
-                    >
-                        Update Vibe
-                    </button>
-                )}
-            </div>
+            {/* Conversation Starters Interactive Modal */}
+            <ConversationStartersModal
+                isOpen={showStartersModal}
+                onClose={() => setShowStartersModal(false)}
+                draftDetails={draftDetails}
+                setDraftDetails={setDraftDetails}
+                onSave={handleSaveStarters}
+                isSaving={isSavingDetails}
+                hobbiesList={HOBBIES_LIST}
+            />
         </div>
     );
 }
@@ -748,4 +1265,3 @@ function formatDayAndDate(dateString?: string) {
     const year = date.getFullYear();
     return `${day}, ${dayNum} ${month} ${year}`;
 }
-

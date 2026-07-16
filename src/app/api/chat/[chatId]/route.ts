@@ -3,6 +3,8 @@ import connectDB from "@/src/app/config/dbconfig";
 import Chat from "@/src/models/chatModel";
 import User from "@/src/models/userModel";
 import getUserFromToken from "@/src/app/helpers/getUserFromToken";
+import getOrCreateListenProfile from "@/src/app/helpers/getOrCreateListenProfile";
+import mongoose from "mongoose";
 
 export async function GET(
   req: NextRequest,
@@ -19,7 +21,8 @@ export async function GET(
     const { chatId } = await params;
     const chat = await Chat.findById(chatId)
       .populate("participants", "name username profileImage")
-      .populate("messages.sender", "name username profileImage");
+      .populate("messages.sender", "name username profileImage")
+      .populate("listenCardId");
 
     if (!chat) {
       return NextResponse.json({ message: "Chat not found" }, { status: 404 });
@@ -219,11 +222,51 @@ export async function PATCH(
         reportedAt: new Date(),
       });
 
+      if (chat.isListenChat) {
+        // Find the other participant who is being reported
+        const reportedUserId = chat.participants.find(
+          (p: any) => p.toString() !== user._id.toString()
+        );
+
+        if (reportedUserId) {
+          const reportedProfile = await getOrCreateListenProfile(reportedUserId.toString());
+          reportedProfile.reportsCount = (reportedProfile.reportsCount || 0) + 1;
+          
+          if (reportedProfile.reportsCount >= 3) {
+            reportedProfile.isBlocked = true;
+          } else {
+            // Ban for 1 day (24 hours)
+            reportedProfile.banUntil = new Date(Date.now() + 24 * 60 * 60 * 1000);
+          }
+          await reportedProfile.save();
+        }
+
+        // Lock the chat immediately
+        chat.isLocked = true;
+        chat.isPermanentlyUnlocked = false;
+        chat.expiresAt = new Date();
+      }
+
       await chat.save();
 
       return NextResponse.json({
         success: true,
-        message: "Report submitted successfully",
+        message: chat.isListenChat 
+          ? "Report submitted successfully. The chat has been locked."
+          : "Report submitted successfully",
+      });
+    } else if (action === "endChat") {
+      // Lock the chat
+      chat.isLocked = true;
+      chat.isPermanentlyUnlocked = false;
+      chat.expiresAt = new Date();
+
+      await chat.save();
+
+      return NextResponse.json({
+        success: true,
+        message: "Chat ended successfully",
+        chat,
       });
     } else if (action === "follow") {
       // Get the other user
@@ -301,3 +344,70 @@ export async function PATCH(
   }
 }
 
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ chatId: string }> }
+) {
+  try {
+    await connectDB();
+
+    const user = await getUserFromToken(req);
+    if (!user) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
+    const { chatId } = await params;
+    const chat = await Chat.findById(chatId);
+
+    if (!chat) {
+      return NextResponse.json({ message: "Chat not found" }, { status: 404 });
+    }
+
+    // Must be a participant
+    if (!chat.participants.some((p: any) => p.toString() === user._id.toString())) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
+    }
+
+    // Only allow deletion of non-permanently-unlocked chats
+    if (chat.isPermanentlyUnlocked) {
+      return NextResponse.json(
+        { message: "Permanent chats cannot be deleted" },
+        { status: 400 }
+      );
+    }
+
+    // Ensure expiration is evaluated
+    chat.checkExpiration();
+
+    if (!chat.isLocked) {
+      return NextResponse.json(
+        { message: "Only expired or ended chats can be deleted" },
+        { status: 400 }
+      );
+    }
+
+    // Soft-delete: add user to deletedBy if not already there
+    const userIdObj = typeof user._id === "string" ? new mongoose.Types.ObjectId(user._id) : user._id;
+
+    const alreadyDeleted = chat.deletedBy?.some(
+      (id: any) => id.toString() === userIdObj.toString()
+    );
+
+    if (!alreadyDeleted) {
+      if (!chat.deletedBy) chat.deletedBy = [];
+      chat.deletedBy.push(userIdObj);
+      await chat.save();
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Chat removed from your inbox",
+    });
+  } catch (error: any) {
+    console.error("Error deleting chat:", error);
+    return NextResponse.json(
+      { message: error.message || "Failed to delete chat" },
+      { status: 500 }
+    );
+  }
+}

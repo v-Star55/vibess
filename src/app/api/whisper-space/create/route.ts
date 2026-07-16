@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const { text } = await req.json();
+    const { text, mood } = await req.json();
 
     if (!text || typeof text !== "string") {
       return NextResponse.json(
@@ -45,6 +45,9 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    const validMoods = ["chill", "fun", "overthinking", "chaos", "calm"];
+    const activeMood = validMoods.includes(mood) ? mood : "chill";
 
     const trimmedText = text.trim();
 
@@ -71,17 +74,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check rate limit: 1 confession per 6 hours
-    const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+    // Check rate limit: 1 confession per 1 hour
+    const oneHourAgo = new Date(Date.now() - 1 * 60 * 60 * 1000);
     const recentConfession = await Confession.findOne({
       createdBy: user._id,
-      createdAt: { $gte: sixHoursAgo },
+      createdAt: { $gte: oneHourAgo },
       status: "active",
     });
 
     if (recentConfession) {
       const timeUntilNext = Math.ceil(
-        (recentConfession.createdAt.getTime() + 6 * 60 * 60 * 1000 - Date.now()) / (1000 * 60)
+        (recentConfession.createdAt.getTime() + 1 * 60 * 60 * 1000 - Date.now()) / (1000 * 60)
       );
       return NextResponse.json(
         { 
@@ -107,6 +110,10 @@ export async function POST(req: NextRequest) {
       // For now, continue - in production you might want to be more strict
     }
 
+    // Get user location coordinates if available to set confession's geo-coordinates
+    const dbUser = await User.findById(user._id).select("location");
+    const confessionLocation = dbUser?.location || { type: "Point", coordinates: [0, 0] };
+
     // Create confession
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 6);
@@ -118,6 +125,10 @@ export async function POST(req: NextRequest) {
       status: "active",
       reportCount: 0,
       reports: [],
+      mood: activeMood,
+      location: confessionLocation,
+      relates: [],
+      relateCount: 0,
     });
 
     await confession.save();
@@ -129,6 +140,7 @@ export async function POST(req: NextRequest) {
         _id: confession._id,
         text: confession.text,
         expiresAt: confession.expiresAt,
+        mood: confession.mood,
       },
     });
   } catch (error: any) {
