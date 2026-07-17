@@ -17,6 +17,7 @@ import {
   RefreshCw,
   Send,
   Sliders,
+  HeartHandshake,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -252,6 +253,85 @@ export default function LandingPage() {
   const rotateWhisper = () => {
     setWhisperIdx((prev) => (prev + 1) % whispers.length);
   };
+
+  /* ---------------- State for Interactive Listening Space ------------ */
+  const mockSupportRequests = [
+    {
+      id: 1,
+      topic: "🌌 Lonely Night",
+      heaviness: "Light",
+      reason: "Just looking for someone to talk to while coding at 2 AM. Quiet vibes.",
+      user: "Nikhil, 3.4km away",
+      options: [
+        "Hey Nikhil, what are you building? Down to talk.",
+        "Hey Nikhil, late night coding is real. What language?",
+        "I'm up too. Down for a chill chat to keep you company!"
+      ],
+      reply: "Thanks for connecting. Honestly, just having someone here makes a big difference. I'm working on a React project, debugging state locks. What are you up to?"
+    },
+    {
+      id: 2,
+      topic: "🌀 Existential Dread",
+      heaviness: "Heavy",
+      reason: "Everything feels overwhelming right now. Need an empathetic listener to vent to about career goals.",
+      user: "Simran, 1.8km away",
+      options: [
+        "Hey Simran, take a deep breath. I'm here. What's on your mind?",
+        "I completely relate. Take your time, what's causing the dread?",
+        "Hey, it's okay to feel overwhelmed. Vent away, I am listening."
+      ],
+      reply: "Thank you so much. It's just hard figuring out the next steps after graduation. Hearing that someone cares helps a lot. Do you ever feel like you're falling behind?"
+    },
+    {
+      id: 3,
+      topic: "💼 Work Stress",
+      heaviness: "Moderate",
+      reason: "Had a rough review session today. Just want a distraction or to talk it through.",
+      user: "Rohit, 5.0km away",
+      options: [
+        "Rough reviews suck. Do you want to vent or talk distractions?",
+        "Hey Rohit, I can listen if you want to debrief. Or we can discuss hobbies!",
+        "Take it easy. Work is just work. What's a topic you love instead?"
+      ],
+      reply: "Haha, honestly, a distraction would be amazing. Let's talk about movies or favorite video games! What was the last good movie you saw?"
+    }
+  ];
+
+  const [readyToListen, setReadyToListen] = useState(false);
+  const [activeRequestIndex, setActiveRequestIndex] = useState(0);
+  const [listeningSessionActive, setListeningSessionActive] = useState(false);
+  const [chatMessages, setChatMessages] = useState<{ sender: "system" | "seeker" | "listener"; text: string }[]>([]);
+  const [isTypingResponse, setIsTypingResponse] = useState(false);
+
+  const startListeningSession = () => {
+    const request = mockSupportRequests[activeRequestIndex];
+    setChatMessages([
+      { sender: "system", text: `Connected with ${request.user}. Be supportive, empathetic, and kind.` },
+      { sender: "seeker", text: `Topic: ${request.topic} (${request.heaviness} Support)\n\n"${request.reason}"` }
+    ]);
+    setListeningSessionActive(true);
+  };
+
+  const handleSendSupportMessage = (text: string) => {
+    if (isTypingResponse) return;
+    setChatMessages((prev) => [...prev, { sender: "listener", text }]);
+    setIsTypingResponse(true);
+
+    setTimeout(() => {
+      setChatMessages((prev) => [
+        ...prev,
+        { sender: "seeker", text: mockSupportRequests[activeRequestIndex].reply }
+      ]);
+      setIsTypingResponse(false);
+    }, 1500);
+  };
+
+  const endListeningSession = () => {
+    setListeningSessionActive(false);
+    setChatMessages([]);
+  };
+
+  const [activeStep, setActiveStep] = useState(0);
 
   /* tick-based typing effect for hero tagline */
   const taglines = [
@@ -964,48 +1044,433 @@ export default function LandingPage() {
                 </div>
               </div>
             </Reveal>
+
+            {/* Box 6: Listening Space (Open to Listen) */}
+            <Reveal delay={300} className="md:col-span-2">
+              <div className="h-full bg-gradient-to-br from-teal-500/10 to-[#00120f] border border-teal-500/10 rounded-3xl p-8 hover:border-teal-500/30 transition-all hover:shadow-xl hover:shadow-teal-500/5 flex flex-col md:flex-row gap-6 items-stretch justify-between">
+                <div className="flex-1 flex flex-col justify-between text-left">
+                  <div>
+                    <div className="w-12 h-12 rounded-2xl bg-teal-500/15 flex items-center justify-center mb-5">
+                      <HeartHandshake className="w-6 h-6 text-teal-400" />
+                    </div>
+                    <h3 className="text-2xl font-bold mb-2">Listening Space & Profiles</h3>
+                    <p className="text-white/50 text-sm leading-relaxed mb-6">
+                      Step up as a listener or find support when things get heavy. Toggle your status to go online, accept anonymous topic cards, and join private support chats. Build listening stats to highlight your empathy rating.
+                    </p>
+                  </div>
+
+                  {/* Status Toggle & Stats Mockup */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => {
+                          setReadyToListen(!readyToListen);
+                          if (readyToListen) {
+                            endListeningSession();
+                          }
+                        }}
+                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                          readyToListen ? "bg-teal-500" : "bg-white/10"
+                        }`}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                            readyToListen ? "translate-x-5" : "translate-x-0"
+                          }`}
+                        />
+                      </button>
+                      <span className="text-sm font-semibold text-white/80">
+                        {readyToListen ? (
+                          <span className="flex items-center gap-2 text-teal-400">
+                            <span className="w-2 h-2 rounded-full bg-teal-400 animate-ping" />
+                            Open to Listen (Online)
+                          </span>
+                        ) : (
+                          "Offline • Toggle to Start Listening"
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="flex gap-4 border-t border-white/5 pt-4 text-xs text-white/40">
+                      <div>
+                        <span className="block text-white/70 font-mono font-bold">14.5 hrs</span>
+                        <span>Total Listened</span>
+                      </div>
+                      <div>
+                        <span className="block text-white/70 font-mono font-bold">4.9 ★</span>
+                        <span>Empathy Rating</span>
+                      </div>
+                      <div>
+                        <span className="block text-white/70 font-mono font-bold">O(1) Performance</span>
+                        <span>Cached Duration</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Interactive Area */}
+                <div className="w-full md:w-80 shrink-0 bg-black/60 border border-white/10 rounded-2xl p-4 flex flex-col justify-between min-h-[260px] relative overflow-hidden">
+                  {!readyToListen ? (
+                    /* Inactive Offline State */
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
+                      <div className="w-12 h-12 rounded-full border border-dashed border-white/20 flex items-center justify-center mb-3">
+                        <HeartHandshake className="w-5 h-5 text-white/25" />
+                      </div>
+                      <h4 className="text-xs font-bold text-white/60 mb-1">Listener Board Offline</h4>
+                      <p className="text-[10px] text-white/40 leading-relaxed max-w-[200px]">
+                        Toggle your &ldquo;Open to Listen&rdquo; status to start viewing support cards and helping others in your area.
+                      </p>
+                    </div>
+                  ) : listeningSessionActive ? (
+                    /* Active Simulated Chat State */
+                    <div className="flex-1 flex flex-col justify-between h-full">
+                      {/* Chat Header */}
+                      <div className="flex items-center justify-between pb-2 border-b border-white/5 mb-3">
+                        <span className="text-[10px] font-bold text-teal-400 uppercase tracking-wider">Support Session</span>
+                        <button
+                          onClick={endListeningSession}
+                          className="text-[9px] font-bold text-rose-400 hover:text-rose-300 transition-colors bg-rose-500/10 px-2 py-0.5 rounded-full"
+                        >
+                          End
+                        </button>
+                      </div>
+
+                      {/* Chat Messages */}
+                      <div className="flex-1 space-y-2 overflow-y-auto max-h-[140px] pr-1 mb-3 text-[11px] scrollbar-thin scrollbar-thumb-white/5 scrollbar-track-transparent">
+                        {chatMessages.map((msg, i) => {
+                          if (msg.sender === "system") {
+                            return (
+                              <div key={i} className="text-center text-[9px] text-white/30 italic py-1 leading-tight border-b border-white/5 mb-2">
+                                {msg.text}
+                              </div>
+                            );
+                          }
+                          const isSeeker = msg.sender === "seeker";
+                          return (
+                            <div
+                              key={i}
+                              className={`flex flex-col max-w-[85%] ${
+                                isSeeker ? "self-start text-left" : "self-end text-right ml-auto"
+                              }`}
+                            >
+                              <div
+                                className={`px-3 py-2 rounded-2xl leading-relaxed whitespace-pre-wrap ${
+                                  isSeeker
+                                    ? "bg-white/5 border border-white/5 text-white/90 rounded-tl-none"
+                                    : "bg-teal-500 text-[#00120f] font-semibold rounded-tr-none"
+                                }`}
+                              >
+                                {msg.text}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {isTypingResponse && (
+                          <div className="flex items-center gap-1.5 text-[9px] text-white/40 italic mt-1 self-start">
+                            <span className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                            <span className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                            <span className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                            <span>Seeker is typing...</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Empathetic Pre-defined Reply Options */}
+                      {chatMessages.length === 2 && !isTypingResponse && (
+                        <div className="space-y-1">
+                          <span className="text-[9px] text-white/30 block mb-1">Choose a supportive reply:</span>
+                          {mockSupportRequests[activeRequestIndex].options.map((opt, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => handleSendSupportMessage(opt)}
+                              className="w-full text-left p-2 bg-white/5 border border-white/5 hover:border-teal-500/40 hover:bg-teal-500/5 text-white/80 hover:text-white rounded-xl text-[10px] leading-tight transition-all"
+                            >
+                              {opt}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {chatMessages.length > 2 && !isTypingResponse && (
+                        <div className="text-center pt-2">
+                          <span className="text-[10px] text-teal-400 font-bold block mb-1">Session Complete!</span>
+                          <button
+                            onClick={endListeningSession}
+                            className="w-full py-2 bg-teal-500 text-[#00120f] font-bold text-xs rounded-xl hover:bg-teal-400 transition-colors shadow-lg shadow-teal-500/20"
+                          >
+                            Close & Rate listener
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    /* Active Listener Board State (Support Cards List) */
+                    <div className="flex-1 flex flex-col justify-between h-full">
+                      <div>
+                        {/* Request Cards Navigation Header */}
+                        <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/5">
+                          <span className="text-[10px] font-bold text-teal-400 uppercase tracking-wider">Active Cards ({mockSupportRequests.length})</span>
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => setActiveRequestIndex((prev) => (prev > 0 ? prev - 1 : mockSupportRequests.length - 1))}
+                              className="p-1 rounded bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors animate-pulse"
+                            >
+                              ←
+                            </button>
+                            <span className="text-[10px] font-mono text-white/40 px-1 bg-white/5 rounded flex items-center justify-center">
+                              {activeRequestIndex + 1}/{mockSupportRequests.length}
+                            </span>
+                            <button
+                              onClick={() => setActiveRequestIndex((prev) => (prev < mockSupportRequests.length - 1 ? prev + 1 : 0))}
+                              className="p-1 rounded bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors animate-pulse"
+                            >
+                              →
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Request Content */}
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between font-semibold">
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] border ${
+                              mockSupportRequests[activeRequestIndex].heaviness === "Heavy"
+                                ? "bg-rose-500/10 border-rose-500/30 text-rose-400"
+                                : mockSupportRequests[activeRequestIndex].heaviness === "Moderate"
+                                ? "bg-amber-500/10 border-amber-500/30 text-amber-400"
+                                : "bg-teal-500/10 border-teal-500/30 text-teal-400"
+                            }`}>
+                              {mockSupportRequests[activeRequestIndex].topic} • {mockSupportRequests[activeRequestIndex].heaviness}
+                            </span>
+                            <span className="text-[9px] text-white/40 font-semibold">{mockSupportRequests[activeRequestIndex].user.split(",")[1].trim()}</span>
+                          </div>
+
+                          <p className="text-xs text-white/80 leading-relaxed font-medium italic min-h-[50px] bg-white/[0.02] border border-white/5 p-2.5 rounded-xl">
+                            &ldquo;{mockSupportRequests[activeRequestIndex].reason}&rdquo;
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={startListeningSession}
+                        className="w-full mt-4 py-2.5 rounded-xl bg-teal-500 text-[#00120f] font-bold text-xs hover:bg-teal-400 transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-teal-500/15"
+                      >
+                        <HeartHandshake className="w-3.5 h-3.5" />
+                        Connect & Listen
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Reveal>
           </div>
         </div>
       </section>
 
       {/* ═══════════════════ HOW IT WORKS ═══════════════════ */}
       <section id="how-it-works" className="relative z-10 py-24 px-6 bg-white/[0.01] border-y border-white/5">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <Reveal>
             <div className="text-center mb-16">
               <p className="text-xs uppercase tracking-[0.25em] text-pink-400 font-semibold mb-3">SIMPLE DIRECT PATHWAY</p>
               <h2 className="text-4xl md:text-5xl font-bold">How Vibess Works</h2>
+              <p className="text-sm sm:text-base text-white/50 max-w-xl mx-auto mt-4">
+                Four simple steps to broadcast your frequency, discover matches, and build real connections on your own terms.
+              </p>
             </div>
           </Reveal>
 
-          <div className="grid md:grid-cols-4 gap-6">
-            {[
-              { step: "01", icon: Sparkles, color: "purple", title: "Set Your Vibe", desc: "Select your active mood, intensity level, tags, and what interests you today." },
-              { step: "02", icon: Heart, color: "pink", title: "Proximity Match", desc: "See users or local group chats (GPs) nearby that match your wavelength." },
-              { step: "03", icon: MessageCircle, color: "amber", title: "Interact Freely", desc: "Initiate 24-hour chats or hop into location-based group rooms instantly." },
-              { step: "04", icon: Star, color: "emerald", title: "Permanent Bonding", desc: "Cast vote checks to convert highly engaging temporary groups to permanent chats." },
-            ].map((item, idx) => {
-              const Icon = item.icon;
-              const colorMap: Record<string, string> = {
-                purple: "from-purple-500/15 to-purple-900/10 border-purple-500/20 text-purple-400",
-                pink: "from-pink-500/15 to-pink-900/10 border-pink-500/20 text-pink-400",
-                amber: "from-amber-500/15 to-amber-900/10 border-amber-500/20 text-amber-400",
-                emerald: "from-emerald-500/15 to-emerald-900/10 border-emerald-500/20 text-emerald-400",
-              };
-              const c = colorMap[item.color];
-              return (
-                <Reveal key={idx} delay={idx * 100}>
-                  <div className={`relative h-full bg-gradient-to-br ${c.split(" ").slice(0, 2).join(" ")} border ${c.split(" ")[2]} rounded-3xl p-6 hover:scale-105 transition-all`}>
-                    <span className={`text-xs font-bold uppercase tracking-widest ${c.split(" ")[3]} opacity-60`}>Step {item.step}</span>
-                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mt-4 mb-4">
-                      <Icon className={`w-5 h-5 ${c.split(" ")[3]}`} />
-                    </div>
-                    <h3 className="text-lg font-bold mb-2">{item.title}</h3>
-                    <p className="text-white/40 text-xs leading-relaxed">{item.desc}</p>
+          <div className="grid lg:grid-cols-12 gap-12 items-center">
+            {/* Left side: Step Selector */}
+            <div className="lg:col-span-5 space-y-4">
+              {[
+                { step: "01", icon: Sparkles, color: "purple", title: "Broadcast Your Vibe", desc: "Select your emoji, describe your current mood keywords, choose a track, and set your energy level." },
+                { step: "02", icon: MapPin, color: "pink", title: "Scan Proximity Radar", desc: "Adjust your range scanner (from 5km to 50km+) to find active vibe cards and temporary Group Chats (GPs) around you." },
+                { step: "03", icon: MessageCircle, color: "amber", title: "Chat with Zero Pressure", desc: "Initiate 24-hour temporary chat windows. Make use of personalized Gemini AI icebreakers when the conversation gets stuck." },
+                { step: "04", icon: Star, color: "emerald", title: "Form Permanent Bonds", desc: "Cast follow votes to make chats permanent, or collectively vote to upgrade temporary Group Chats into lifetime hubs." },
+              ].map((item, idx) => {
+                const Icon = item.icon;
+                const isActive = activeStep === idx;
+                const colorClassMap: Record<string, string> = {
+                  purple: "text-purple-400 border-purple-500/20 bg-purple-500/5 hover:border-purple-500/40",
+                  pink: "text-pink-400 border-pink-500/20 bg-pink-500/5 hover:border-pink-500/40",
+                  amber: "text-amber-400 border-amber-500/20 bg-amber-500/5 hover:border-amber-500/40",
+                  emerald: "text-emerald-400 border-emerald-500/20 bg-emerald-500/5 hover:border-emerald-500/40",
+                };
+                return (
+                  <Reveal key={idx} delay={idx * 50}>
+                    <button
+                      onClick={() => setActiveStep(idx)}
+                      className={`w-full text-left p-5 rounded-2xl border transition-all duration-300 flex items-start gap-4 select-none ${
+                        isActive
+                          ? "bg-white/[0.04] border-white/10 shadow-lg shadow-purple-500/5 translate-x-2"
+                          : "bg-transparent border-transparent hover:bg-white/[0.01] hover:border-white/5 opacity-55 hover:opacity-100"
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0 border ${
+                        isActive ? colorClassMap[item.color].split(" ")[1] : "border-white/5"
+                      }`}>
+                        <Icon className={`w-5 h-5 ${isActive ? colorClassMap[item.color].split(" ")[0] : "text-white/40"}`} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${isActive ? colorClassMap[item.color].split(" ")[0] : "text-white/30"}`}>
+                            Step {item.step}
+                          </span>
+                          {isActive && <span className="w-1.5 h-1.5 rounded-full bg-pink-500 animate-pulse" />}
+                        </div>
+                        <h3 className="text-base font-bold text-white mb-1">{item.title}</h3>
+                        <p className="text-white/40 text-xs leading-relaxed">{item.desc}</p>
+                      </div>
+                    </button>
+                  </Reveal>
+                );
+              })}
+            </div>
+
+            {/* Right side: Dynamic Preview Mockup */}
+            <div className="lg:col-span-7 flex justify-center w-full relative">
+              <Reveal delay={200} className="w-full max-w-lg">
+                <div className="w-full aspect-video sm:aspect-[4/3] bg-black/60 border border-white/10 rounded-3xl p-6 backdrop-blur-xl shadow-2xl flex flex-col justify-between overflow-hidden relative min-h-[320px] transition-all duration-500">
+                  <div className="absolute inset-0 bg-radial-gradient from-purple-500/5 via-transparent to-transparent pointer-events-none" />
+                  
+                  {/* Dynamic Mockup Headers */}
+                  <div className="flex items-center justify-between pb-3 border-b border-white/5 mb-4">
+                    <span className="text-[10px] font-mono text-white/40 font-bold uppercase tracking-widest flex items-center gap-1.5 select-none">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping inline-block" />
+                      Interactive Sandbox Simulator
+                    </span>
+                    <span className="text-xs font-bold text-white/60 select-none">
+                      Preview: Step {activeStep + 1}
+                    </span>
                   </div>
-                </Reveal>
-              );
-            })}
+
+                  {/* Render Visual based on activeStep */}
+                  <div className="flex-1 flex flex-col justify-center items-center relative">
+                    {activeStep === 0 && (
+                      /* Broadcast Vibe Mockup */
+                      <div className="w-full max-w-xs bg-gradient-to-b from-purple-900/30 to-black/80 border border-purple-500/20 rounded-2xl p-5 text-left animate-fade-in relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-16 h-16 bg-purple-500/10 rounded-full blur-xl pointer-events-none" />
+                        <div className="flex items-start justify-between mb-4">
+                          <div>
+                            <span className="text-4xl block mb-1 select-none">🤯</span>
+                            <span className="px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/30 text-[9px] text-purple-300 font-bold select-none">
+                              Status: Ambition Mode
+                            </span>
+                          </div>
+                          <span className="text-sm font-mono font-bold text-purple-300 select-none">88% Energy</span>
+                        </div>
+                        <p className="text-xs text-white leading-relaxed mb-3 italic font-semibold select-none">
+                          &ldquo;Writing compiler logic at 3 AM. Need a soundboard to review TS interfaces.&rdquo;
+                        </p>
+                        <div className="flex items-center gap-2 text-[10px] text-white/40 border-t border-white/5 pt-2.5">
+                          <span className="text-purple-400">🎵 Music Genre:</span>
+                          <span className="text-white/70 font-semibold select-none">Synthwave Lofi</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {activeStep === 1 && (
+                      /* Scan Radar Mockup */
+                      <div className="w-64 h-64 rounded-full border border-white/5 flex items-center justify-center relative animate-pulse-slow">
+                        {/* Radar sweep */}
+                        <div className="absolute inset-0 rounded-full opacity-10 animate-spin-slow pointer-events-none" style={{ background: "conic-gradient(from 0deg, rgba(168,85,247,0.25) 0%, transparent 60%)" }} />
+                        {/* Inner rings */}
+                        <div className="w-48 h-48 rounded-full border border-white/5 flex items-center justify-center" />
+                        <div className="w-32 h-32 rounded-full border border-white/5 flex items-center justify-center" />
+                        
+                        {/* Pulse Center */}
+                        <div className="w-8 h-8 rounded-full bg-pink-500/20 border border-pink-500/40 flex items-center justify-center">
+                          <div className="w-3 h-3 rounded-full bg-pink-500 animate-ping" />
+                        </div>
+
+                        {/* Found matches */}
+                        <div className="absolute top-8 left-12 p-1.5 rounded-full bg-black/80 border border-purple-500/30 flex items-center gap-1.5 text-[9px] font-bold shadow-lg animate-float-slow">
+                          <span>😴</span>
+                          <span className="text-white/80">92% Match</span>
+                          <span className="text-white/30 font-mono">1.2km</span>
+                        </div>
+
+                        <div className="absolute bottom-12 right-6 p-1.5 rounded-full bg-black/80 border-pink-500/30 flex items-center gap-1.5 text-[9px] font-bold shadow-lg animate-float-slow" style={{ animationDelay: '1.5s' }}>
+                          <span>🤪</span>
+                          <span className="text-white/80">78% Match</span>
+                          <span className="text-white/30 font-mono">3.4km</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {activeStep === 2 && (
+                      /* Chat with Zero Pressure Mockup */
+                      <div className="w-full max-w-xs bg-white/[0.03] border border-white/5 rounded-2xl p-4 text-left space-y-3 shadow-xl relative">
+                        <div className="flex items-center justify-between pb-2 border-b border-white/5">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500" />
+                            <span className="text-[10px] font-bold text-white">Nikhil, 3.4km away</span>
+                          </div>
+                          <span className="text-[9px] text-amber-400 font-mono px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded-full font-bold">23h remaining</span>
+                        </div>
+                        <div className="space-y-2 text-[10px]">
+                          <div className="bg-white/5 px-3 py-1.5 rounded-xl rounded-tl-none self-start max-w-[80%] text-white/90">
+                            Hey, saw you match 92% on overthinking topics?
+                          </div>
+                          <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1.5 rounded-xl rounded-tr-none self-end max-w-[80%] ml-auto text-right font-medium">
+                            Haha yes, debugging compiler configurations!
+                          </div>
+                        </div>
+                        <div className="pt-2 border-t border-dashed border-white/10 text-[9px] text-white/40">
+                          <span className="text-emerald-400 font-bold">AI Suggestion:</span> Ask what their favorite late night snack is.
+                        </div>
+                      </div>
+                    )}
+
+                    {activeStep === 3 && (
+                      /* Star Permanent Bonding Mockup */
+                      <div className="w-full max-w-xs bg-[#0b061c]/80 border border-emerald-500/20 rounded-2xl p-5 text-center space-y-4 shadow-2xl relative overflow-hidden">
+                        <div className="w-12 h-12 rounded-full bg-emerald-500/15 flex items-center justify-center mx-auto text-emerald-400 border border-emerald-500/30">
+                          <Star className="w-6 h-6 animate-pulse" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-bold text-white mb-1">Make Group Chat Permanent?</h4>
+                          <p className="text-[10px] text-white/55 leading-relaxed">
+                            Active Group Chats can be converted into permanent rooms if 70% of members agree.
+                          </p>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[9px] font-bold text-emerald-400">
+                            <span>Voting Approval:</span>
+                            <span>80% Met (4/5 votes)</span>
+                          </div>
+                          <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                            <div className="bg-emerald-500 h-full rounded-full" style={{ width: '80%' }} />
+                          </div>
+                        </div>
+                        <span className="inline-block px-3 py-1 bg-emerald-500/10 border border-emerald-500/25 rounded-full text-emerald-400 font-bold text-[9px] select-none">
+                          🎉 Group Chat Upgraded to Permanent
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Sandbox Navigation Controls */}
+                  <div className="border-t border-white/5 pt-3 mt-4 flex items-center justify-between text-[10px] text-white/30">
+                    <span>Active Wavelength: 94.6 FM</span>
+                    <div className="flex gap-1.5 font-bold">
+                      <button
+                        onClick={() => setActiveStep((prev) => (prev > 0 ? prev - 1 : 3))}
+                        className="px-2.5 py-1 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white rounded-lg transition-colors font-semibold"
+                      >
+                        Prev Step
+                      </button>
+                      <button
+                        onClick={() => setActiveStep((prev) => (prev < 3 ? prev + 1 : 0))}
+                        className="px-2.5 py-1 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white rounded-lg transition-colors font-semibold"
+                      >
+                        Next Step
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </Reveal>
+            </div>
           </div>
         </div>
       </section>
@@ -1115,6 +1580,116 @@ export default function LandingPage() {
               </Reveal>
             </div>
 
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════ LISTENING SPACE PROFILE HIGHLIGHT ═══════════════════ */}
+      <section id="listening-space-details" className="relative z-10 py-24 px-6 bg-gradient-to-br from-[#021b17]/50 via-transparent to-transparent border-t border-white/5">
+        <div className="max-w-5xl mx-auto grid md:grid-cols-12 gap-12 items-center w-full relative">
+          
+          {/* Mock Illustration or Cards on the Left */}
+          <div className="md:col-span-6 flex justify-center w-full order-last md:order-first">
+            <Reveal delay={150} className="w-full max-w-md">
+              <div className="w-full bg-[#001411]/60 border border-teal-500/20 rounded-3xl p-6 backdrop-blur-xl shadow-2xl space-y-4 relative overflow-hidden">
+                <div className="absolute -top-10 -right-10 w-32 h-32 bg-teal-500/10 rounded-full blur-2xl pointer-events-none" />
+                
+                {/* Topic tags row */}
+                <div className="flex flex-wrap gap-2">
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-teal-500/10 border border-teal-500/20 text-teal-400 select-none">
+                    💆 Empathy-First Space
+                  </span>
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/10 border border-rose-500/20 text-rose-400 select-none">
+                    🔒 100% Anonymous
+                  </span>
+                </div>
+
+                {/* Main illustration quote block */}
+                <div className="p-4 bg-white/[0.02] border border-white/5 rounded-2xl space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
+                    <span className="text-[10px] font-bold text-white/55 uppercase tracking-wider">Heavy Support Request</span>
+                  </div>
+                  <p className="text-sm font-semibold text-white/90 leading-relaxed italic">
+                    &ldquo;Everything feels heavy tonight and I have nobody to hear me. Just need to vent without being judged.&rdquo;
+                  </p>
+                </div>
+
+                {/* Quick listener profile snippet */}
+                <div className="flex items-center gap-3 p-3 bg-teal-500/5 border border-teal-500/10 rounded-2xl">
+                  <div className="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center text-teal-400 font-bold text-lg select-none">
+                    😌
+                  </div>
+                  <div className="text-left flex-1">
+                    <span className="text-xs font-bold text-white block">Active Listener Connected</span>
+                    <span className="text-[9px] text-teal-400 font-medium">Ready to support, validate, and hear you out</span>
+                  </div>
+                  <span className="text-[10px] text-white/40 font-mono">5.0 ★</span>
+                </div>
+              </div>
+            </Reveal>
+          </div>
+
+          {/* Details Column on the Right */}
+          <div className="md:col-span-6 text-left flex flex-col justify-center space-y-6">
+            <Reveal delay={100}>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/25 text-[10px] font-bold tracking-widest text-teal-400 uppercase select-none w-fit">
+                <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
+                Listening Space
+              </div>
+            </Reveal>
+
+            <Reveal delay={150}>
+              <h3 className="text-3xl sm:text-4xl font-extrabold text-white leading-tight">
+                When it feels heavy, and there&apos;s nobody to hear you.
+              </h3>
+            </Reveal>
+
+            <Reveal delay={200}>
+              <p className="text-xs sm:text-sm text-white/50 leading-relaxed">
+                Sometimes, you just need a safe space to release what&apos;s weighing you down. The Listening Space connects you with empathetic listeners who are online solely to hear you out, validate your feelings, and offer quiet support.
+              </p>
+            </Reveal>
+
+            <Reveal delay={250}>
+              <div className="grid sm:grid-cols-2 gap-4 text-xs font-semibold text-white/80">
+                <div className="space-y-1">
+                  <h4 className="text-teal-400 font-bold flex items-center gap-1.5">
+                    ✦ Zero Judgment
+                  </h4>
+                  <p className="text-[11px] text-white/40 font-medium leading-relaxed">
+                    Share your thoughts anonymously without revealing your main profile or matching preferences.
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  <h4 className="text-teal-400 font-bold flex items-center gap-1.5">
+                    ✦ Filter by Heaviness
+                  </h4>
+                  <p className="text-[11px] text-white/40 font-medium leading-relaxed">
+                    Flag requests as Light, Moderate, or Heavy so listeners are fully prepared to support your specific needs.
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  <h4 className="text-teal-400 font-bold flex items-center gap-1.5">
+                    ✦ Verified Empathy
+                  </h4>
+                  <p className="text-[11px] text-white/40 font-medium leading-relaxed">
+                    Listeners earn reviews, feedback tags, and ratings based on active sessions to maintain a warm, safe workspace.
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  <h4 className="text-teal-400 font-bold flex items-center gap-1.5">
+                    ✦ O(1) Performance Caching
+                  </h4>
+                  <p className="text-[11px] text-white/40 font-medium leading-relaxed">
+                    Seamless session duration logging is optimized in the background so that profile performance is never impacted.
+                  </p>
+                </div>
+              </div>
+            </Reveal>
           </div>
         </div>
       </section>

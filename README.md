@@ -49,11 +49,13 @@ A modern social networking platform that helps you connect with people who match
 - **Jokes**: Lighten your mood with curated jokes
 
 ### 📱 Social Features
-- **Posts & Feed**: Create posts, like, comment, and react
-- **Trending Content**: Discover what's popular in your community
-- **Bookmarks**: Save your favorite posts
-- **User Profiles**: Customize your profile and follow others
-- **Stories**: Share moments that disappear after 24 hours
+- **User Profiles**: Customize your profile, follow others, view matching statistics, and manage settings through a dynamic 3-dots dropdown menu.
+
+### 🎧 Listening Space (Listening Profile)
+- **Open to Listen Toggle**: Users can toggle their status to mark themselves as open to listen to others who need support.
+- **Listen Cards & Requests**: Users can post a card detailing a topic, reason, and heaviness (Light, Moderate, Heavy) to find a companion.
+- **Real-Time Duration Caching**: Computes and caches the total hours a user has spent listening incrementally upon session expiration/lock, maintaining high profile load performance (O(1) lookups).
+- **Listener Reviews**: Display recent feedback, empathy ratings, and topic tags.
 
 ### 🤖 AI Integration
 - **Google Gemini AI**: 
@@ -174,11 +176,9 @@ vibess/
 │   │   │   ├── ai/          # AI endpoints
 │   │   │   ├── auth/        # Authentication
 │   │   │   ├── chat/        # Chat system
-│   │   │   ├── chat-room/   # Chat rooms
 │   │   │   ├── games/       # Games
 │   │   │   ├── gp/          # Group Posts
 │   │   │   ├── jokes/       # Jokes
-│   │   │   ├── post/        # Posts & interactions
 │   │   │   ├── user/        # User management
 │   │   │   ├── vibe/        # Vibe cards
 │   │   │   └── whisper-space/ # Anonymous confessions

@@ -104,38 +104,29 @@ export default function LeftSide() {
 
 
   return (
-    <div className="flex flex-col h-full w-full bg-[#1a0030]/80 backdrop-blur-sm overflow-y-auto">
-      {/* User Profile Section */}
-      <div className="p-4 border-b border-white/10">
-        <button
-          onClick={handleProfileClick}
-          className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all group"
-        >
-          <div className="relative w-12 h-12 rounded-full overflow-hidden ring-2 ring-purple-500/50 bg-linear-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold">
-            {user?.profileImage ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={user.profileImage}
-                alt={user.name || "User"}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span>{profileInitial}</span>
-            )}
-          </div>
-          <div className="flex-1 text-left min-w-0">
-            <p className="text-white font-semibold text-sm truncate">{user?.name || "User"}</p>
-            <p className="text-white/60 text-xs truncate">
-              {user?.username ? `@${user.username}` : "Just vibing"}
-            </p>
-          </div>
-          <ChevronRight className="w-5 h-5 text-white/40 group-hover:text-white/60 transition-colors" />
-        </button>
+    <div className="flex flex-col h-full w-full bg-[#150F26] border-r border-[#f3efff]/10 p-[22px_16px_18px] overflow-y-auto gap-[22px] font-sans">
+      {/* Brand logo */}
+      <div className="sidebar-logo flex items-center justify-between px-1">
+        <div className="brand text-white flex items-center gap-[9px]">
+          <span className="brand-dot"></span>
+          <span>vibess</span>
+        </div>
       </div>
 
-      {/* Menu Section */}
-      <div className="p-4 space-y-2">
-        <h3 className="text-xs font-semibold text-white/40 uppercase tracking-wider px-3 mb-2">MENU</h3>
+      {/* Cosmetic Search Bar */}
+      <div className="side-search glass">
+        <Search className="w-[15px] h-[15px] text-[#7c7196] shrink-0" />
+        <input 
+          type="text" 
+          placeholder="Search vibes, people, GPs..." 
+          className="flex-1 bg-transparent border-none outline-none text-white text-[13px] placeholder-[#7c7196]"
+        />
+        <kbd className="font-mono text-[10px] text-[#7c7196] border border-white/10 px-1.5 py-0.5 rounded-[5px]">/</kbd>
+      </div>
+
+      {/* Menu Navigation */}
+      <nav className="nav-group">
+        <span className="eyebrow">Menu</span>
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.path;
@@ -143,32 +134,22 @@ export default function LeftSide() {
             <button
               key={item.label}
               onClick={() => router.push(item.path)}
-              className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all ${
-                isActive
-                  ? 'bg-purple-500/20 text-white border border-purple-500/30'
-                  : 'text-white/70 hover:text-white hover:bg-white/5'
-              }`}
+              className={`nav-item w-full text-left transition-all ${isActive ? "active" : ""}`}
             >
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-purple-400' : ''}`} />
-                <span className="text-sm font-medium truncate">{item.label}</span>
-              </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {item.label === "Chats" && unreadCount > 0 && (
-              <span className="px-2 py-0.5 rounded-full bg-pink-500 text-[10px] font-semibold">
-                {Math.min(unreadCount, 9)}
-              </span>
-            )}
-            <ChevronRight className={`w-4 h-4 ${isActive ? 'text-purple-400' : 'text-white/40'}`} />
-          </div>
+              <Icon className="w-[18px] h-[18px] shrink-0" />
+              <span className="lbl flex-1 truncate">{item.label}</span>
+              {item.label === "Chats" && unreadCount > 0 && (
+                <span className="badge shrink-0">{unreadCount}</span>
+              )}
+              <ChevronRight className="chev-r shrink-0" />
             </button>
           );
         })}
-      </div>
+      </nav>
 
-      {/* Vibe Section */}
-      <div className="p-4 space-y-2 border-t border-white/10">
-        <h3 className="text-xs font-semibold text-white/40 uppercase tracking-wider px-3 mb-2">VIBES</h3>
+      {/* Vibes Navigation */}
+      <nav className="nav-group">
+        <span className="eyebrow">Vibes</span>
         {vibeItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.path;
@@ -176,44 +157,57 @@ export default function LeftSide() {
             <button
               key={item.label}
               onClick={() => router.push(item.path)}
-              className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all ${
-                isActive
-                  ? 'bg-pink-500/20 text-white border border-pink-500/30'
-                  : 'text-white/70 hover:text-white hover:bg-white/5'
-              }`}
+              className={`nav-item w-full text-left transition-all ${isActive ? "active" : ""}`}
             >
-              <div className="flex items-center gap-3">
-                <Icon className={`w-5 h-5 ${isActive ? 'text-pink-300' : ''}`} />
-                <span className="text-sm font-medium">{item.label}</span>
-              </div>
-              <ChevronRight className={`w-4 h-4 ${isActive ? 'text-pink-300' : 'text-white/40'}`} />
+              <Icon className="w-[18px] h-[18px] shrink-0" />
+              <span className="lbl flex-1 truncate">{item.label}</span>
+              <ChevronRight className="chev-r shrink-0" />
             </button>
           );
         })}
+      </nav>
+
+      {/* Advice for the day */}
+      <div className="advice-card glass mt-auto">
+        <div className="ic-row flex items-center gap-2">
+          <Lightbulb className="w-[15px] h-[15px] text-[#ffb25e]" />
+          <span className="eyebrow">Advice for the day</span>
+        </div>
+        {loadingAdvice ? (
+          <div className="flex items-center justify-center gap-2 py-2">
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-[#ffb25e]" />
+            <span className="text-[#b3a7ce] text-xs">Loading...</span>
+          </div>
+        ) : dailyAdvice ? (
+          <p className="margin-0 text-[12.5px] text-[#b3a7ce] leading-[1.55]">{dailyAdvice}</p>
+        ) : (
+          <p className="margin-0 text-[12.5px] text-[#7c7196] leading-[1.55]">No advice available</p>
+        )}
       </div>
 
-      {/* Advice for the Day Section */}
-      <div className="p-4 space-y-2 border-t border-white/10">
-        <h3 className="text-xs font-semibold text-white/40 uppercase tracking-wider px-3 mb-2">ADVICE FOR THE DAY</h3>
-        <div className="rounded-xl border border-purple-500/30 p-4 bg-linear-to-br from-purple-500/10 to-pink-500/10 backdrop-blur-sm">
-          {loadingAdvice ? (
-            <div className="flex items-center justify-center gap-2 py-4">
-              <Loader2 className="w-4 h-4 animate-spin text-purple-400" />
-              <span className="text-white/60 text-sm">Loading advice...</span>
-            </div>
-          ) : dailyAdvice ? (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 mb-2">
-                <Lightbulb className="w-4 h-4 text-yellow-400" />
-                <span className="text-xs font-semibold text-white/80 uppercase tracking-wider">Advice</span>
-              </div>
-              <p className="text-white text-sm leading-relaxed">{dailyAdvice}</p>
-            </div>
+      {/* Profile Card at the bottom */}
+      <div onClick={handleProfileClick} className="profile-bottom mt-1">
+        <div className="avatar-lg shrink-0 rounded-full overflow-hidden flex items-center justify-center font-bold font-bricolage text-[#160E22] bg-gradient-to-br from-[#ff5d73] to-[#c65cff]">
+          {user?.profileImage ? (
+            <img
+              src={user.profileImage}
+              alt={user.name || "User"}
+              className="w-full h-full object-cover"
+            />
           ) : (
-            <div className="text-center py-4">
-              <p className="text-white/60 text-sm">No advice available</p>
-            </div>
+            profileInitial
           )}
+        </div>
+        <div className="profile-meta flex-1 text-left min-w-0">
+          <div className="name font-bold text-[13.5px] text-white truncate">{user?.name || "User"}</div>
+          <div className="handle text-[11.5px] text-[#7c7196] truncate">
+            {user?.username ? `@${user.username}` : "Just vibing"}
+          </div>
+        </div>
+        <div className="dots flex flex-col gap-[3px] shrink-0 p-[6px]">
+          <span></span>
+          <span></span>
+          <span></span>
         </div>
       </div>
     </div>

@@ -319,9 +319,9 @@ export async function selectListenerForCard(cardId: string, listenerId: string) 
   }
 }
 
-export async function rateListener(cardId: string, rating: number) {
+export async function rateListener(cardId: string, rating: number, comment?: string) {
   try {
-    const res = await api.post("/listen/rate", { cardId, rating });
+    const res = await api.post("/listen/rate", { cardId, rating, comment });
     return res.data;
   } catch (error: any) {
     console.error("Error rating listener:", error);

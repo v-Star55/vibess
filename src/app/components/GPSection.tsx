@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { ChevronRight, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import GPCard from "./GPCard";
-import { getGPsForHome } from "../lib/api";
+import { getGPsForHome, getMyGPs } from "../lib/api";
 
 interface GP {
   _id: string;
@@ -46,9 +46,16 @@ export default function GPSection({ category, gps }: GPSectionProps) {
 
   const loadGPs = async () => {
     try {
-      const res = await getGPsForHome();
-      if (res.success && res.gps[category]) {
-        setLocalGPs(res.gps[category]);
+      if (category === "My GP") {
+        const res = await getMyGPs();
+        if (res.success && res.gps) {
+          setLocalGPs(res.gps);
+        }
+      } else {
+        const res = await getGPsForHome();
+        if (res.success && res.gps[category]) {
+          setLocalGPs(res.gps[category]);
+        }
       }
     } catch (error) {
       console.error("Error reloading GPs:", error);

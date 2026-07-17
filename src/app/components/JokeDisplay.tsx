@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 import { fetchJoke } from "../lib/api";
 import { Sparkles } from "lucide-react";
 
-
 export default function JokeDisplay() {
   const [joke, setJoke] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [clicked, setClicked] = useState(false);
 
   const fetchNewJoke = async () => {
     try {
@@ -16,18 +16,17 @@ export default function JokeDisplay() {
       if (Array.isArray(data) && data.length > 0 && data[0].joke) {
         setJoke(data[0].joke);
       } else {
-        setJoke("Why did the developer go broke? Because he used up all his cache!");
+        setJoke("Why do programmers prefer dark mode? Because light attracts bugs!");
       }
     } catch (error) {
       console.error("Error fetching joke:", error);
-      setJoke("Why did the developer go broke? Because he used up all his cache!");
+      setJoke("Why do programmers prefer dark mode? Because light attracts bugs!");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    // Fetch joke immediately on mount
     fetchNewJoke();
 
     // Auto-refresh every 30 minutes
@@ -35,30 +34,37 @@ export default function JokeDisplay() {
     return () => clearInterval(interval);
   }, []);
 
+  const handleEmojiClick = () => {
+    setClicked(true);
+    setTimeout(() => setClicked(false), 220);
+  };
+
   return (
-    <div className="relative w-full max-w-3xl mx-auto bg-gradient-to-br from-purple-600/10 to-pink-500/20 border border-purple-400/20 rounded-2xl py-5 px-10 shadow-xl backdrop-blur-sm transition-all duration-300">
-      <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
-        <div className="flex-shrink-0 flex flex-col items-center mr-0 sm:mr-5">
-          <span className="bg-purple-500/20 rounded-full p-3">
-            <Sparkles className="w-8 h-8 text-purple-400 animate-pulse" />
-          </span>
-        </div>
-        <div className="flex-1 w-full min-w-0">
-          <div className="flex flex-col sm:flex-row items-start sm:items-end gap-2">
-            <h3 className="text-lg font-bold text-white/90 tracking-wide">Giggles</h3>
-            <span className="ml-0 sm:ml-4 text-xs text-purple-100 bg-purple-800/30 rounded px-3 py-1 font-mono">
-              A tiny laugh, every half hour.
-            </span>
-          </div>
-          <div className="mt-3 min-h-[32px]">
-            {loading ? (
-              <div className="h-7 w-2/3 rounded bg-white/15 animate-pulse"></div>
-            ) : (
-              <p className="text-white/90 text-base sm:text-lg leading-relaxed break-words">{joke}</p>
-            )}
-          </div>
-        </div>
+    <div className="tip-card glass font-sans text-white w-full">
+      <div className="tip-ic shrink-0">
+        <Sparkles className="w-[22px] h-[22px] text-[#160E22] animate-pulse" />
       </div>
+      <div className="tip-body">
+        <div className="tip-head">
+          <h3>Giggles</h3>
+          <span className="tip-tag glass">A tiny laugh, every half hour</span>
+        </div>
+        {loading ? (
+          <div className="h-6 w-2/3 rounded bg-white/10 animate-pulse mt-2"></div>
+        ) : (
+          <p className="text-[15.5px] leading-[1.45] text-[#f3efff]">{joke}</p>
+        )}
+      </div>
+      <button 
+        onClick={handleEmojiClick}
+        className="tip-react shrink-0 text-xl cursor-pointer"
+        style={{
+          transform: clicked ? 'scale(1.4) rotate(10deg)' : 'none',
+          transition: 'transform 0.2s ease, background 0.2s ease',
+        }}
+      >
+        😊
+      </button>
     </div>
   );
 }

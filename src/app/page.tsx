@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useUserStore } from "../store/store";
 import { getUser } from "./lib/api";
 import LandingPage from "./landing/page";
+import Loader from "@/src/components/ui/Loader";
 
 export default function Home() {
   const router = useRouter();
@@ -47,7 +48,7 @@ export default function Home() {
   if (checking && !user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#1d0033] via-[#2a0a4a] to-[#1d0033] flex items-center justify-center">
-        <div className="w-16 h-16 border-4 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+        <Loader size="xl" color="purple" />
       </div>
     );
   }

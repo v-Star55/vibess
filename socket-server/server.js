@@ -139,6 +139,34 @@ io.on("connection", (socket) => {
     socket.to(String(listenerId)).emit("listen-chat-started-notify", { chatId });
   });
 
+  socket.on("create-listen-card", (data) => {
+    if (!data.card) return;
+    console.log(`Socket [${socket.id}] broadcast new listen card created:`, data.card._id);
+    socket.broadcast.emit("listen-card-created", data);
+  });
+
+  socket.on("cancel-listen-card", (data) => {
+    if (!data.cardId) return;
+    console.log(`Socket [${socket.id}] broadcast listen card cancelled:`, data.cardId);
+    socket.broadcast.emit("listen-card-cancelled", data);
+  });
+
+  socket.on("listen-card-accepted", (data) => {
+    if (!data.cardId) return;
+    console.log(`Socket [${socket.id}] broadcast listen card accepted:`, data.cardId);
+    socket.broadcast.emit("listen-card-removed", data);
+  });
+
+  socket.on("listen-chat-ended", (data) => {
+    const { chatId, receiverId } = data;
+    if (!chatId) return;
+    console.log(`Socket [${socket.id}] broadcast listen chat ended:`, chatId);
+    socket.to(String(chatId)).emit("listen-chat-ended-notify", { chatId });
+    if (receiverId) {
+      socket.to(String(receiverId)).emit("listen-chat-ended-notify", { chatId });
+    }
+  });
+
   // Polls & Challenges updates
   socket.on("polls-challenges-update", (data) => {
     const { chatId } = data;

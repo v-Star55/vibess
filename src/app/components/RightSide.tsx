@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Plus, Sparkles, Loader2, Zap, Flame, X } from "lucide-react";
+import { Plus, Sparkles, Loader2, Zap, Flame, X, MessageCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getMyVibeCard } from "../lib/vibeApi";
 import { useUserStore } from "../../store/store";
@@ -56,24 +56,24 @@ export default function RightSide() {
         if (myVibeLoading) {
             return (
                 <div className="flex items-center justify-center py-10">
-                    <Loader2 className="w-6 h-6 animate-spin text-purple-300" />
+                    <Loader2 className="w-6 h-6 animate-spin text-[#c65cff]" />
                 </div>
             );
         }
 
         if (!myVibe) {
             return (
-                <div className="rounded-2xl border border-dashed border-white/20 p-5 bg-white/5">
+                <div className="rounded-2xl border border-dashed border-white/20 p-5 bg-white/5 font-sans">
                     <div className="flex items-center gap-3 mb-3">
-                        <Sparkles className="w-5 h-5 text-purple-300" />
+                        <Sparkles className="w-5 h-5 text-[#ffb25e]" />
                         <p className="text-white font-semibold text-sm">Set your vibe</p>
                     </div>
-                    <p className="text-white/60 text-sm mb-4">
+                    <p className="text-[#b3a7ce] text-sm mb-4">
                         Capture how you feel right now to unlock matching vibes and 24-hour chats.
                     </p>
                     <button
                         onClick={() => router.push("/vibe/create")}
-                        className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-semibold hover:from-purple-600 hover:to-pink-600 transition-all"
+                        className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#ff5d73] to-[#c65cff] text-[#160E22] text-sm font-bold hover:from-[#ff5d73]/90 hover:to-[#c65cff]/90 transition-all cursor-pointer"
                     >
                         Create Vibe Card
                     </button>
@@ -89,133 +89,127 @@ export default function RightSide() {
         };
 
         return (
-            <div
-                className="rounded-3xl p-5 border-2 relative overflow-hidden"
+            <div 
+                className="rounded-3xl p-5 border-2 relative overflow-hidden font-sans text-white"
                 style={{
                     borderColor: theme.borderGlow,
                     backgroundImage: `linear-gradient(135deg, ${theme.gradientFrom}, ${theme.gradientTo})`,
-                    boxShadow: `0 0 50px ${theme.borderGlow}50`
+                    boxShadow: `0 0 35px ${theme.borderGlow}50`
                 }}
             >
-                <div className="flex items-center justify-between text-white mb-4">
-                    <div className="text-4xl">{myVibe.emoji}</div>
-                    <span className="text-xs uppercase tracking-[0.3em] text-white/80">Active Vibe</span>
-                </div>
-                <p className="text-white font-extrabold text-xl leading-snug mb-4">
-                    {myVibe.description}
-                </p>
-                <div className="space-y-3 mb-4">
-                    <div className="flex items-center gap-2 text-white/90">
-                        <div className="p-2 rounded-xl bg-white/15">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                            </svg>
-                        </div>
-                        <div className="flex-1">
-                            <p className="text-sm font-semibold">Energy Level: {myVibe.energyLevel || 5}/10</p>
-                            <div className="w-full bg-white/10 rounded-full h-1.5 mt-1">
-                                <div
-                                    className="h-1.5 rounded-full"
-                                    style={{
-                                        width: `${((myVibe.energyLevel || 5) / 10) * 100}%`,
-                                        backgroundColor: theme.accentColor,
-                                    }}
-                                />
-                            </div>
-                        </div>
+                {/* Vibe Top Emoji & Active Badge */}
+                <div className="flex items-start justify-between mb-4 relative z-10">
+                    <div 
+                        className="w-14 h-14 rounded-full border-2 p-[2px] flex items-center justify-center bg-[#150F26]/30 text-3xl"
+                        style={{ borderColor: theme.borderGlow }}
+                    >
+                        {myVibe.emoji}
                     </div>
-                    {myVibe.currentIntent && myVibe.currentIntent.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                            {myVibe.currentIntent.map((intent: string, idx: number) => (
-                                <span key={idx} className="px-2 py-1 rounded-lg text-xs font-medium bg-white/15 text-white">
-                                    {intent}
-                                </span>
-                            ))}
-                        </div>
-                    )}
-                    {myVibe.contextTag && (
-                        <p className="text-xs text-white/70">#{myVibe.contextTag}</p>
-                    )}
-                    {myVibe.askMeAbout && myVibe.askMeAbout.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 py-1">
-                            {myVibe.askMeAbout.map((item: string, idx: number) => (
-                                <span key={idx} className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#33D6C0]/15 text-[#33D6C0] border border-[#33D6C0]/25">
-                                    {item}
-                                </span>
-                            ))}
-                        </div>
-                    )}
-                    <p className="text-xs text-white/60">{myVibe.conversationalPreferences || myVibe.interactionBoundary || "Fast replies"}</p>
+                    <span className="active-badge bg-[#150F26]/40 border border-white/15 text-white/90">
+                        <span className="d" style={{ backgroundColor: theme.accentColor }}></span>
+                        Active Vibe
+                    </span>
                 </div>
 
-                {/* What I'm Feeling Like Today */}
-                {myVibe.feelingOptions && Array.isArray(myVibe.feelingOptions) && myVibe.feelingOptions.length > 0 && (
-                    <div className="mb-4 pt-3 border-t border-white/10">
-                        <p className="text-white/70 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-1">
-                            <span style={{ color: theme.accentColor }}>✨</span>
-                            Feeling Like
-                        </p>
+                {/* Vibe Title / Description */}
+                <h2 className="text-xl font-extrabold tracking-tight mb-2 relative z-10 leading-snug" style={{ color: theme.accentColor }}>
+                    {myVibe.description}
+                </h2>
+
+                {/* Context Tag and Conversational Preference */}
+                {(myVibe.contextTag || myVibe.conversationalPreferences) && (
+                    <div className="text-xs text-white/70 mb-3 space-y-1 relative z-10 font-mono">
+                        {myVibe.contextTag && <div>#{myVibe.contextTag}</div>}
+                        {myVibe.conversationalPreferences && <div>💬 {myVibe.conversationalPreferences}</div>}
+                    </div>
+                )}
+
+                {/* Energy Track */}
+                <div className="mb-4 relative z-10">
+                    <div className="flex items-center justify-between text-xs font-semibold mb-1.5">
+                        <span className="flex items-center gap-1 text-white/90">
+                            <Zap className="w-3.5 h-3.5" style={{ color: theme.accentColor }} />
+                            Energy Level
+                        </span>
+                        <span className="font-mono text-white/80">{myVibe.energyLevel || 5}/10</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                        <div 
+                            className="h-full rounded-full transition-all" 
+                            style={{ 
+                                width: `${(myVibe.energyLevel || 5) * 10}%`, 
+                                backgroundColor: theme.accentColor,
+                                boxShadow: `0 0 10px ${theme.accentColor}`
+                            }}
+                        ></div>
+                    </div>
+                </div>
+
+                {/* intent and askMeAbout tags (showing all) */}
+                <div className="flex flex-wrap gap-1.5 mb-4 relative z-10">
+                    {myVibe.currentIntent && myVibe.currentIntent.map((intent: string, idx: number) => (
+                        <span key={`intent-${idx}`} className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-white/15 text-white/90 border border-white/10">
+                            {intent}
+                        </span>
+                    ))}
+                    {myVibe.askMeAbout && myVibe.askMeAbout.map((item: string, idx: number) => (
+                        <span key={`ask-${idx}`} className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#33d6c0]/15 text-[#33d6c0] border border-[#33d6c0]/20">
+                            {item}
+                        </span>
+                    ))}
+                </div>
+
+                {/* Feeling Like Section (showing all) */}
+                {myVibe.feelingOptions && myVibe.feelingOptions.length > 0 && (
+                    <div className="mb-4 pt-3 border-t border-white/10 relative z-10 text-xs">
+                        <span className="eyebrow flex items-center gap-1 mb-2">
+                            <Sparkles className="w-3.5 h-3.5" style={{ color: theme.accentColor }} />
+                            Feeling like
+                        </span>
                         <div className="flex flex-wrap gap-1.5">
-                            {myVibe.feelingOptions.slice(0, 3).map((feeling: string, idx: number) => (
-                                <span key={idx} className="px-2 py-1 rounded-full text-xs font-medium bg-white/15 text-white/90 border border-white/20">
+                            {myVibe.feelingOptions.map((feeling: string, idx: number) => (
+                                <span key={`feeling-${idx}`} className="px-2.5 py-1 rounded-full bg-white/15 text-white/90 border border-white/20">
                                     {feeling}
                                 </span>
                             ))}
-                            {myVibe.feelingOptions.length > 3 && (
-                                <span className="px-2 py-1 rounded-full text-xs font-medium bg-white/10 text-white/60">
-                                    +{myVibe.feelingOptions.length - 3}
-                                </span>
-                            )}
                         </div>
                     </div>
                 )}
 
-                {/* Vibe Availability */}
-                {myVibe.vibeAvailability && myVibe.vibeAvailability.trim() !== "" && (
-                    <div className="mb-4 pt-3 border-t border-white/10">
-                        <p className="text-white/70 text-xs font-semibold uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                            <span style={{ color: theme.accentColor }}>⚡</span>
-                            Availability
-                        </p>
-                        <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-white/15 text-white border border-white/20 inline-block">
-                            {myVibe.vibeAvailability}
-                        </span>
-                    </div>
-                )}
+                {/* Divider */}
+                <div className="h-px bg-white/10 my-3.5 relative z-10"></div>
 
-                {/* Mini Personality Prompt */}
-                {myVibe.personalityPrompt && myVibe.personalityPrompt.trim() !== "" && (
-                    <div className="mb-4 pt-3 border-t border-white/10">
-                        <p className="text-white/70 text-xs font-semibold uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                            <span style={{ color: theme.accentColor }}>💭</span>
-                            Today I feel like...
-                        </p>
-                        <p className="px-2.5 py-1 rounded-lg text-xs font-medium italic bg-white/15 text-white border border-white/20">
-                            {myVibe.personalityPrompt}
-                        </p>
-                    </div>
-                )}
-
-                <div className="mt-5 grid grid-cols-2 gap-3 text-xs text-white/80">
-                    <div className="bg-black/20 rounded-2xl px-3 py-2">
-                        <p className="text-[10px] uppercase tracking-widest opacity-70">Mood</p>
-                        <p className="font-semibold capitalize">{myVibe.vibeScore?.mood}</p>
-                    </div>
-                    <div className="bg-black/20 rounded-2xl px-3 py-2">
-                        <p className="text-[10px] uppercase tracking-widest opacity-70">Energy</p>
-                        <p className="font-semibold">{Math.round(myVibe.vibeScore?.energy ?? 0)}/100</p>
-                    </div>
+                {/* Short visual feel/availability indicators */}
+                <div className="space-y-3 mb-4 relative z-10">
+                    {myVibe.personalityPrompt && (
+                        <div className="text-[12.5px] leading-relaxed text-white/80 italic pl-2 border-l-2" style={{ borderColor: theme.accentColor }}>
+                            "Today I feel like {myVibe.personalityPrompt}"
+                        </div>
+                    )}
+                    {myVibe.vibeAvailability && (
+                        <div className="flex items-center gap-1.5 text-xs text-white/80 font-medium">
+                            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.accentColor }}></span>
+                            Status: <span className="font-semibold text-white">{myVibe.vibeAvailability}</span>
+                        </div>
+                    )}
                 </div>
-                <div className="mt-5 flex gap-3">
-                    <button
-                        onClick={() => router.push("/vibe/discover")}
-                        className="flex-1 py-2.5 rounded-xl bg-white/20 text-white font-semibold text-sm hover:bg-white/30 transition-all"
+
+                {/* Bottom matching buttons */}
+                <div className="flex gap-3 mt-4 relative z-10 text-xs">
+                    <button 
+                        onClick={() => router.push("/vibe/discover")} 
+                        className="flex-1 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold border border-white/15 cursor-pointer transition-colors"
                     >
                         See Matches
                     </button>
-                    <button
-                        onClick={() => router.push("/vibe/create")}
-                        className="px-4 py-2.5 rounded-xl bg-white text-purple-700 font-semibold text-sm hover:bg-white/90 transition-all"
+                    <button 
+                        onClick={() => router.push("/vibe/create")} 
+                        className="flex-1 py-2.5 rounded-xl font-bold cursor-pointer transition-all hover:scale-[1.02]"
+                        style={{ 
+                            backgroundColor: theme.accentColor,
+                            color: "#160E22",
+                            boxShadow: `0 4px 15px ${theme.accentColor}40`
+                        }}
                     >
                         Update
                     </button>

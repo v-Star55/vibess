@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const { cardId, rating } = await req.json();
+    const { cardId, rating, comment } = await req.json();
     if (!cardId || rating === undefined) {
       return NextResponse.json(
         { message: "cardId and rating are required" },
@@ -63,6 +63,15 @@ export async function POST(req: NextRequest) {
     listenerProfile.ratingCount += 1;
     listenerProfile.ratingSum += numericRating;
     listenerProfile.rating = Number((listenerProfile.ratingSum / listenerProfile.ratingCount).toFixed(2));
+
+    // Append review feedback comment
+    listenerProfile.reviews.push({
+      reviewer: user._id,
+      rating: numericRating,
+      comment: (comment || "").trim(),
+      heaviness: card.heaviness || "Moderate",
+      topic: card.topic || "Listening Session",
+    });
 
     await listenerProfile.save();
 

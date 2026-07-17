@@ -187,7 +187,16 @@ export default function ChatPage() {
   // Socket
   useEffect(() => {
     if (!socket || !connected || !chatId) return;
+
+    // Join room initially
     socket.emit("join-room", chatId);
+
+    // Re-join room on reconnect
+    const handleConnect = () => {
+      console.log("Socket reconnected, re-joining chat room:", chatId);
+      socket.emit("join-room", chatId);
+    };
+
     const handleMsg = (data: any) => {
       if (data.chatId === chatId) {
         setChat((prev: any) => {
@@ -220,14 +229,32 @@ export default function ChatPage() {
         });
       }
     };
+
+    const handleChatEnded = (data: any) => {
+      if (data.chatId === chatId) {
+        toast("🚫 This listening session has been ended.", { icon: "🔒" });
+        getChat(chatId).then((r) => {
+          if (r.success) {
+            setChat(r.chat);
+            setTimeRemaining(r.timeRemaining);
+          }
+        });
+      }
+    };
+
+    socket.on("connect", handleConnect);
     socket.on("receive-message", handleMsg);
     socket.on("sparksStateUpdate", handleSparksNotify);
+    socket.on("listen-chat-ended-notify", handleChatEnded);
+
     return () => {
       socket.emit("leave-room", chatId);
+      socket.off("connect", handleConnect);
       socket.off("receive-message", handleMsg);
       socket.off("sparksStateUpdate", handleSparksNotify);
+      socket.off("listen-chat-ended-notify", handleChatEnded);
     };
-  }, [socket, connected, chatId, refreshUnread]);
+  }, [socket, connected, chatId, refreshUnread, user]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -320,8 +347,20 @@ export default function ChatPage() {
   const handleEndChat = async () => {
     if (!confirm("End this session? This cannot be undone.")) return;
     try {
+      const other = chat?.participants?.find(
+        (p: any) => (p?._id?.toString?.() ?? p?.toString?.()) !== user?.id
+      );
+
       await endChatInChat(chatId);
       toast.success("Session ended.");
+
+      if (socket && connected) {
+        socket.emit("listen-chat-ended", {
+          chatId,
+          receiverId: other?._id?.toString?.() ?? other?.toString?.()
+        });
+      }
+
       if (confirm("Would you like to delete this chat history from your inbox?")) {
         await deleteChat(chatId);
         toast.success("Chat removed from your inbox");

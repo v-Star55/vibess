@@ -10,7 +10,8 @@ import {
   Edit, Camera, X, Check, Sparkles, Loader2,
   MapPin, Calendar, HeartHandshake, Star,
   Clock, ShieldCheck, Heart, Info, Award, Cake,
-  Lock, Flame, LogOut, ChevronRight, Eye, EyeOff
+  Lock, Flame, LogOut, ChevronRight, Eye, EyeOff,
+  MoreVertical
 } from "lucide-react";
 import ConversationStartersSidebar from "../../components/ConversationStartersSidebar";
 import ConversationStartersModal from "../../components/ConversationStartersModal";
@@ -25,6 +26,7 @@ export default function Profile() {
     const [userVibe, setUserVibe] = useState<any | null>(null);
     const [vibeLoading, setVibeLoading] = useState(false);
     const [vibeError, setVibeError] = useState("");
+    const [showDropdown, setShowDropdown] = useState(false);
 
     // Profile Details (Icebreaker Questions)
     const [profileDetails, setProfileDetails] = useState<any>({});
@@ -232,6 +234,13 @@ export default function Profile() {
             setLocationName("Bhiwadi, Rajasthan");
         }
     }, [profile?.user?.location?.coordinates]);
+
+    useEffect(() => {
+        if (!showDropdown) return;
+        const handleOutsideClick = () => setShowDropdown(false);
+        document.addEventListener("click", handleOutsideClick);
+        return () => document.removeEventListener("click", handleOutsideClick);
+    }, [showDropdown]);
 
     const handleLogout = async () => {
         try {
@@ -508,15 +517,35 @@ export default function Profile() {
                         )}
                         <div className="absolute inset-0 bg-black/20"></div>
 
-                        {/* Top Action Row */}
-                        <div className="absolute top-4 right-4 z-10 flex gap-3">
-                            <button
-                                onClick={handleLogout}
-                                className="px-5 py-2 glass-btn bg-white/5 text-[#F3EFFF] rounded-full hover:bg-white/10 transition-all font-medium text-sm flex items-center gap-2"
-                            >
-                                <LogOut className="w-4 h-4 text-[#FF5D73]" />
-                                Logout
-                            </button>
+                        {/* Top Action Row with 3 Dots Dropdown */}
+                        <div className="absolute top-4 right-4 z-20 flex gap-3">
+                            <div className="relative">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowDropdown(!showDropdown);
+                                    }}
+                                    className="p-2.5 glass-btn bg-white/5 text-[#F3EFFF] rounded-full hover:bg-white/10 transition-all flex items-center justify-center border border-white/10"
+                                    aria-label="More options"
+                                >
+                                    <MoreVertical className="w-5 h-5 text-[#F3EFFF]" />
+                                </button>
+                                
+                                {showDropdown && (
+                                    <div className="absolute right-0 mt-2 w-40 rounded-2xl bg-[#150F26]/95 border border-white/10 p-1.5 shadow-2xl z-30 animate-in fade-in slide-in-from-top-1 duration-100 backdrop-blur-md">
+                                        <button
+                                            onClick={() => {
+                                                setShowDropdown(false);
+                                                handleLogout();
+                                            }}
+                                            className="w-full px-4 py-2.5 rounded-xl text-left text-sm text-[#FF5D73] hover:bg-white/5 transition flex items-center gap-2 font-medium"
+                                        >
+                                            <LogOut className="w-4 h-4 text-[#FF5D73]" />
+                                            Logout
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         {isOwnProfile && (
@@ -960,7 +989,7 @@ export default function Profile() {
                                         </div>
 
                                         {/* Stats Grid */}
-                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 relative z-10">
+                                        <div className="grid grid-cols-3 gap-2.5 sm:gap-3 mb-6 relative z-10">
                                             <div className="bg-[#150F26]/60 p-4 rounded-2xl border border-white/5 text-center">
                                                 <div className="text-lg md:text-xl font-extrabold font-bricolage text-[#F3EFFF] flex items-center justify-center gap-1">
                                                     <Star className="w-4 h-4 text-[#FFB25E] fill-[#FFB25E]" />
@@ -975,16 +1004,10 @@ export default function Profile() {
                                                 <div className="eyebrow-text text-[9px] mt-1">Sessions</div>
                                             </div>
                                             <div className="bg-[#150F26]/60 p-4 rounded-2xl border border-white/5 text-center">
-                                                <div className="text-lg md:text-xl font-extrabold font-bricolage text-[#F3EFFF]">
-                                                    22m
-                                                </div>
-                                                <div className="eyebrow-text text-[9px] mt-1">Avg Length</div>
-                                            </div>
-                                            <div className="bg-[#150F26]/60 p-4 rounded-2xl border border-white/5 text-center">
                                                 <div className="text-lg md:text-xl font-extrabold font-bricolage text-[#33D6C0]">
-                                                    &lt;3m
+                                                    {profile?.listenProfile?.totalListenHours !== undefined ? `${profile.listenProfile.totalListenHours}h` : "0h"}
                                                 </div>
-                                                <div className="eyebrow-text text-[9px] mt-1">Response</div>
+                                                <div className="eyebrow-text text-[9px] mt-1">Hrs Spent</div>
                                             </div>
                                         </div>
 
@@ -1008,31 +1031,44 @@ export default function Profile() {
                                         <div className="pt-5 border-t border-white/10 relative z-10">
                                             <span className="eyebrow-text text-white/50 block mb-4">Recent Feedback</span>
                                             
-                                            {profile?.listenProfile?.ratingCount > 0 ? (
-                                                <div className="space-y-3">
-                                                    <div className="p-4 rounded-xl bg-white/[0.03] border-l-[3px] border-[#8F84AE] glass-card">
-                                                        <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
-                                                            <div className="flex gap-0.5">
-                                                                {renderStars(5)}
+                                            {profile?.listenProfile?.reviews && profile.listenProfile.reviews.length > 0 ? (
+                                                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1 scrollbar-thin">
+                                                    {profile.listenProfile.reviews.map((rev: any) => {
+                                                        const reviewerName = rev.reviewer?.name || "Anonymous Speaker";
+                                                        const dateStr = new Date(rev.createdAt).toLocaleDateString([], { month: "short", day: "numeric" });
+                                                        
+                                                        const borderColors: Record<string, string> = {
+                                                          Light: "border-[#33D6C0]",
+                                                          Moderate: "border-[#FFB25E]",
+                                                          Heavy: "border-[#FF5D73]",
+                                                        };
+                                                        const borderColor = borderColors[rev.heaviness] || "border-[#C65CFF]";
+
+                                                        return (
+                                                            <div key={rev._id} className={`p-4 rounded-xl bg-white/[0.03] border-l-[3px] ${borderColor} glass-card`}>
+                                                                <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+                                                                    <div className="flex gap-0.5">
+                                                                        {renderStars(rev.rating)}
+                                                                    </div>
+                                                                    <span className="text-[#7C7196] text-[10px] font-mono uppercase tracking-wider">
+                                                                        {rev.topic} · {dateStr}
+                                                                    </span>
+                                                                </div>
+                                                                {rev.comment ? (
+                                                                    <p className="text-[#B3A7CE] text-xs leading-relaxed">
+                                                                        "{rev.comment}"
+                                                                    </p>
+                                                                ) : (
+                                                                    <p className="text-[#7C7196] text-xs italic leading-relaxed">
+                                                                        No written comment provided. Left a {rev.rating}-star rating.
+                                                                    </p>
+                                                                )}
+                                                                <span className="text-[9px] text-[#7C7196] block mt-1.5 text-right font-mono">
+                                                                    — by {reviewerName}
+                                                                </span>
                                                             </div>
-                                                            <span className="text-[#7C7196] text-[10px] font-mono uppercase tracking-wider">Overthinking Session · 2d ago</span>
-                                                        </div>
-                                                        <p className="text-[#B3A7CE] text-xs leading-relaxed">
-                                                            Really listened without trying to fix everything. Helped me get out of an overthinking loop I'd been stuck in for hours.
-                                                        </p>
-                                                    </div>
-                                                    
-                                                    <div className="p-4 rounded-xl bg-white/[0.03] border-l-[3px] border-[#C65CFF] glass-card">
-                                                        <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
-                                                            <div className="flex gap-0.5">
-                                                                {renderStars(5)}
-                                                            </div>
-                                                            <span className="text-[#7C7196] text-[10px] font-mono uppercase tracking-wider">Chaos Session · 5d ago</span>
-                                                        </div>
-                                                        <p className="text-[#B3A7CE] text-xs leading-relaxed">
-                                                            Kind and patient presence. Didn't push options or judge me, just let me rant it all out. Exactly what I needed at 1 AM.
-                                                        </p>
-                                                    </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             ) : (
                                                 <div className="p-4 rounded-xl bg-white/[0.02] border border-dashed border-white/10 text-center text-[#7C7196] text-xs">
