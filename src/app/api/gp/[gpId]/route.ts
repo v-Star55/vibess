@@ -2,6 +2,30 @@ import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/src/app/config/dbconfig";
 import Group from "@/src/models/groupModel";
 import getUserFromToken from "@/src/app/helpers/getUserFromToken";
+import mongoose from "mongoose";
+
+// Helper to sanitize anonymous messages
+const sanitizeMessages = (messages: any[]) => {
+  return (messages || []).map((m: any) => {
+    if (m.isAnonymous) {
+      return {
+        _id: m._id,
+        text: m.text,
+        isAnonymous: true,
+        readBy: m.readBy,
+        sender: {
+          _id: "anonymous",
+          name: "Anonymous",
+          username: "anonymous",
+          profileImage: ""
+        },
+        createdAt: m.createdAt,
+        updatedAt: m.updatedAt
+      };
+    }
+    return m;
+  });
+};
 
 // Get GP details
 export async function GET(
@@ -22,7 +46,8 @@ export async function GET(
       .populate("createdBy", "name username profileImage")
       .populate("members", "name username profileImage")
       .populate("moderator", "name username profileImage")
-      .populate("messages.sender", "name username profileImage");
+      .populate("messages.sender", "name username profileImage")
+      .populate("polls.createdBy", "name username profileImage");
 
     if (!gp) {
       return NextResponse.json(
@@ -36,10 +61,33 @@ export async function GET(
       (member: any) => (member._id || member).toString() === user._id.toString()
     );
 
+    // Count user's anonymous messages sent today
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const anonCountResult = await Group.aggregate([
+      { $unwind: "$messages" },
+      {
+        $match: {
+          "messages.sender": new mongoose.Types.ObjectId(user._id),
+          "messages.isAnonymous": true,
+          "messages.createdAt": { $gte: todayStart, $lte: todayEnd }
+        }
+      },
+      { $count: "count" }
+    ]);
+
+    const anonCount = anonCountResult.length > 0 ? anonCountResult[0].count : 0;
+    const anonRemaining = Math.max(0, 3 - anonCount);
+
     return NextResponse.json({
       success: true,
+      anonRemaining,
       gp: {
         _id: gp._id,
+        gpName: gp.gpName || "",
         category: gp.category,
         subType: gp.subType,
         specificName: gp.specificName,
@@ -71,7 +119,9 @@ export async function GET(
         lastActivityAt: gp.lastActivityAt,
         startedAt: gp.startedAt,
         createdAt: gp.createdAt,
-        messages: gp.messages || [],
+        messages: sanitizeMessages(gp.messages),
+        polls: gp.polls || [],
+        challenges: gp.challenges || [],
         isMember,
       },
     });
@@ -98,7 +148,7 @@ export async function POST(
     }
 
     const { gpId } = await params;
-    const { text } = await req.json();
+    const { text, isAnonymous } = await req.json();
 
     if (!text || !text.trim()) {
       return NextResponse.json(
@@ -127,13 +177,45 @@ export async function POST(
       );
     }
 
-    // Check if GP is active
+    // Check if GP is active or permanent
     const now = new Date();
-    if (gp.status !== "active" || gp.expiresAt <= now) {
+    const isGPActive = gp.status === "active" && gp.expiresAt > now;
+    const isGPPermanent = gp.isPermanent && gp.status === "converted";
+    
+    if (!isGPActive && !isGPPermanent) {
       return NextResponse.json(
         { message: "This GP is no longer active" },
         { status: 400 }
       );
+    }
+
+    // Check daily limit of 3 anonymous messages
+    if (isAnonymous) {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const todayEnd = new Date();
+      todayEnd.setHours(23, 59, 59, 999);
+
+      const anonCountResult = await Group.aggregate([
+        { $unwind: "$messages" },
+        {
+          $match: {
+            "messages.sender": new mongoose.Types.ObjectId(user._id),
+            "messages.isAnonymous": true,
+            "messages.createdAt": { $gte: todayStart, $lte: todayEnd }
+          }
+        },
+        { $count: "count" }
+      ]);
+
+      const anonCount = anonCountResult.length > 0 ? anonCountResult[0].count : 0;
+
+      if (anonCount >= 3) {
+        return NextResponse.json(
+          { message: "You can only send 3 anonymous messages per day." },
+          { status: 400 }
+        );
+      }
     }
 
     // Add message
@@ -141,6 +223,7 @@ export async function POST(
       sender: user._id,
       text: text.trim(),
       readBy: [user._id],
+      isAnonymous: isAnonymous || false,
     });
 
     // Update activity
@@ -163,12 +246,36 @@ export async function POST(
       .populate("createdBy", "name username profileImage")
       .populate("members", "name username profileImage")
       .populate("moderator", "name username profileImage")
-      .populate("messages.sender", "name username profileImage");
+      .populate("messages.sender", "name username profileImage")
+      .populate("polls.createdBy", "name username profileImage");
+
+    // Recalculate remaining anonymous count
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const anonCountResult = await Group.aggregate([
+      { $unwind: "$messages" },
+      {
+        $match: {
+          "messages.sender": new mongoose.Types.ObjectId(user._id),
+          "messages.isAnonymous": true,
+          "messages.createdAt": { $gte: todayStart, $lte: todayEnd }
+        }
+      },
+      { $count: "count" }
+    ]);
+
+    const postAnonCount = anonCountResult.length > 0 ? anonCountResult[0].count : 0;
+    const anonRemaining = Math.max(0, 3 - postAnonCount);
 
     return NextResponse.json({
       success: true,
+      anonRemaining,
       gp: {
         _id: updatedGP._id,
+        gpName: updatedGP.gpName || "",
         category: updatedGP.category,
         subType: updatedGP.subType,
         specificName: updatedGP.specificName,
@@ -200,7 +307,9 @@ export async function POST(
         lastActivityAt: updatedGP.lastActivityAt,
         startedAt: updatedGP.startedAt,
         createdAt: updatedGP.createdAt,
-        messages: updatedGP.messages || [],
+        messages: sanitizeMessages(updatedGP.messages),
+        polls: updatedGP.polls || [],
+        challenges: updatedGP.challenges || [],
         isMember: true,
       },
     });

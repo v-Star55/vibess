@@ -32,6 +32,7 @@
     "next-cloudinary": "^6.17.0",
     "nodemailer": "^7.0.10",
     "prisma": "^6.18.0",
+    "radix-ui": "^1.6.2",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-hot-toast": "^2.6.0",

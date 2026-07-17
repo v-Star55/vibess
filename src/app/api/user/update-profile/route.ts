@@ -20,6 +20,7 @@ export async function PATCH(req: NextRequest) {
     // 🧾 Parse form data
     const formData = await req.formData();
     const bio = formData.get("bio") as string | null;
+    const birthday = formData.get("birthday") as string | null;
     const profileFile = formData.get("profileImage") as File | null;
     const bannerFile = formData.get("bannerImage") as File | null;
 
@@ -28,6 +29,10 @@ export async function PATCH(req: NextRequest) {
 
     if (bio !== undefined && bio !== null) {
       updates.bio = bio.trim();
+    }
+
+    if (birthday !== undefined && birthday !== null) {
+      updates.birthday = birthday ? new Date(birthday) : null;
     }
 
     if (profileFile && profileFile.size > 0) {

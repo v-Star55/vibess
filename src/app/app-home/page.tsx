@@ -44,7 +44,7 @@ export default function AppHome() {
           <Content />
         </div>
       </section>
-      
+
       {/* Right Sidebar */}
       <aside className="w-80 shrink-0 hidden xl:block">
         <RightSide />

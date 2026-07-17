@@ -30,11 +30,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if GP is active
+    // Check if GP is active or permanent
     const now = new Date();
-    if (gp.status !== "active" || gp.expiresAt <= now) {
+    const isActive = gp.status === "active" && gp.expiresAt > now;
+    const isPermanent = gp.isPermanent && gp.status === "converted";
+    
+    if (!isActive && !isPermanent) {
       return NextResponse.json(
-        { message: "This GP is no longer active" },
+        { message: "This GP is no longer active or joinable" },
         { status: 400 }
       );
     }
@@ -69,6 +72,7 @@ export async function POST(req: NextRequest) {
       message: "Successfully joined GP",
       gp: {
         _id: gp._id,
+        gpName: gp.gpName || "",
         category: gp.category,
         subType: gp.subType,
         specificName: gp.specificName,

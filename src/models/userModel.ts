@@ -39,6 +39,10 @@ const userSchema = new mongoose.Schema(
             maxlength: 160, // optional limit, like Twitter's bio
             default: "",
         },
+        birthday: {
+            type: Date,
+            default: null,
+        },
         likes: [
             {
                 type: mongoose.Schema.Types.ObjectId,

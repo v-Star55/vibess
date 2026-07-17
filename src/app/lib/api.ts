@@ -398,12 +398,61 @@ export async function getGPDetails(gpId: string) {
   }
 }
 
-export async function sendGPMessage(gpId: string, text: string) {
+export async function exploreGPs(params?: {
+  category?: string;
+  subType?: string;
+  topic?: string;
+  minTimeRemaining?: string;
+  maxDistance?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}) {
   try {
-    const res = await api.post(`/gp/${gpId}`, { text });
+    const res = await api.get("/gp/explore", { params });
+    return res.data;
+  } catch (error: any) {
+    console.error("Error exploring GPs:", error);
+    throw error;
+  }
+}
+
+export async function sendGPMessage(gpId: string, text: string, isAnonymous?: boolean) {
+  try {
+    const res = await api.post(`/gp/${gpId}`, { text, isAnonymous });
     return res.data;
   } catch (error: any) {
     console.error("Error sending GP message:", error);
+    throw error;
+  }
+}
+
+export async function voteGPToKeep(gpId: string, vote: "yes" | "no") {
+  try {
+    const res = await api.post("/gp/permanent-convert", { gpId, action: "vote", vote });
+    return res.data;
+  } catch (error: any) {
+    console.error("Error voting to keep GP:", error);
+    throw error;
+  }
+}
+
+export async function checkGPConversionStatus(gpId: string) {
+  try {
+    const res = await api.get(`/gp/permanent-convert?gpId=${gpId}`);
+    return res.data;
+  } catch (error: any) {
+    console.error("Error checking conversion status:", error);
+    throw error;
+  }
+}
+
+export async function requestGPConversion(gpId: string) {
+  try {
+    const res = await api.post("/gp/permanent-convert", { gpId, action: "check" });
+    return res.data;
+  } catch (error: any) {
+    console.error("Error requesting GP conversion:", error);
     throw error;
   }
 }
@@ -477,5 +526,67 @@ export async function getDailyAdvice() {
 
 
 
+
+////////// Group Polls & Challenges API
+
+export async function createGPIntervalPoll(gpId: string, question: string, options: string[]) {
+  try {
+    const res = await api.post(`/gp/${gpId}/polls`, { question, options });
+    return res.data;
+  } catch (error: any) {
+    console.error("Error creating GP poll:", error);
+    throw error;
+  }
+}
+
+export async function voteGPIntervalPoll(gpId: string, pollId: string, optionIdx: number) {
+  try {
+    const res = await api.put(`/gp/${gpId}/polls`, { pollId, optionIdx });
+    return res.data;
+  } catch (error: any) {
+    console.error("Error voting in GP poll:", error);
+    throw error;
+  }
+}
+
+export async function deleteGPIntervalPoll(gpId: string, pollId: string) {
+  try {
+    const res = await api.delete(`/gp/${gpId}/polls?pollId=${pollId}`);
+    return res.data;
+  } catch (error: any) {
+    console.error("Error deleting GP poll:", error);
+    throw error;
+  }
+}
+
+export async function createGPChallenge(gpId: string, text: string) {
+  try {
+    const res = await api.post(`/gp/${gpId}/challenges`, { text });
+    return res.data;
+  } catch (error: any) {
+    console.error("Error creating GP challenge:", error);
+    throw error;
+  }
+}
+
+export async function toggleGPChallengeCompletion(gpId: string, challengeId: string) {
+  try {
+    const res = await api.put(`/gp/${gpId}/challenges`, { challengeId });
+    return res.data;
+  } catch (error: any) {
+    console.error("Error toggling GP challenge completion:", error);
+    throw error;
+  }
+}
+
+export async function deleteGPChallenge(gpId: string, challengeId: string) {
+  try {
+    const res = await api.delete(`/gp/${gpId}/challenges?challengeId=${challengeId}`);
+    return res.data;
+  } catch (error: any) {
+    console.error("Error deleting GP challenge:", error);
+    throw error;
+  }
+}
 
 export default api;

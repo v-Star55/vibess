@@ -139,6 +139,14 @@ io.on("connection", (socket) => {
     socket.to(String(listenerId)).emit("listen-chat-started-notify", { chatId });
   });
 
+  // Polls & Challenges updates
+  socket.on("polls-challenges-update", (data) => {
+    const { chatId } = data;
+    if (!chatId) return;
+    console.log(`Polls/Challenges updated in room [${chatId}]`);
+    socket.to(String(chatId)).emit("polls-challenges-update", data);
+  });
+
   socket.on("disconnect", () => {
     console.log(`User disconnected: ${socket.id}`);
   });

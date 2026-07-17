@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
 
     const formattedGPs = activeGPs.map((gp) => ({
       _id: gp._id,
+      gpName: gp.gpName || "",
       category: gp.category,
       subType: gp.subType,
       specificName: gp.specificName,

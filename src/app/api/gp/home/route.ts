@@ -124,6 +124,13 @@ export async function GET(req: NextRequest) {
       "Vibe GP": [],
       "Movie GP": [],
       "Anime GP": [],
+      "Food & Cafe GP": [],
+      "Fitness & Sports GP": [],
+      "Travel GP": [],
+      "Hobbies & Creativity GP": [],
+      "Developer GP": [],
+      "Study GP": [],
+      "Relationship GP": [],
       "Other GP": [],
     };
 
@@ -131,6 +138,7 @@ export async function GET(req: NextRequest) {
       if (gpsByCategory[gp.category] && gpsByCategory[gp.category].length < 4) {
         gpsByCategory[gp.category].push({
           _id: gp._id,
+          gpName: gp.gpName || "",
           category: gp.category,
           subType: gp.subType,
           specificName: gp.specificName,

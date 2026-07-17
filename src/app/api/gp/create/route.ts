@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const {
+      gpName,
       category,
       subType,
       specificName,
@@ -29,9 +30,25 @@ export async function POST(req: NextRequest) {
     } = body;
 
     // Validation
-    if (!category || !subType || !talkTopics || !creationReason || !lookingFor || !whoIsItFor || !location) {
+    if (!gpName || !category || !subType || !talkTopics || !creationReason || !lookingFor || !whoIsItFor || !location) {
       return NextResponse.json(
-        { message: "Category, subType, talkTopics, creationReason, lookingFor, whoIsItFor, and location are required" },
+        { message: "GP Name, category, subType, talkTopics, creationReason, lookingFor, whoIsItFor, and location are required" },
+        { status: 400 }
+      );
+    }
+
+    const cleanGpName = gpName.trim().toLowerCase();
+    if (!/^[a-z0-9-_]{3,30}$/.test(cleanGpName)) {
+      return NextResponse.json(
+        { message: "GP Name must be 3-30 characters and can only contain lowercase letters, numbers, hyphens, and underscores" },
+        { status: 400 }
+      );
+    }
+
+    const existingGP = await Group.findOne({ gpName: cleanGpName });
+    if (existingGP) {
+      return NextResponse.json(
+        { message: "This GP Name is already taken" },
         { status: 400 }
       );
     }
@@ -167,6 +184,7 @@ export async function POST(req: NextRequest) {
 
     // Create GP
     const gp = new Group({
+      gpName: cleanGpName,
       category,
       subType,
       specificName: specificName || "",

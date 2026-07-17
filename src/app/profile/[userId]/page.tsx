@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { 
   Edit, Camera, X, Check, Sparkles, Loader2,
   MapPin, Calendar, HeartHandshake, Star,
-  Clock, ShieldCheck, Heart, Info, Award,
+  Clock, ShieldCheck, Heart, Info, Award, Cake,
   Lock, Flame, LogOut, ChevronRight, Eye, EyeOff
 } from "lucide-react";
 import ConversationStartersSidebar from "../../components/ConversationStartersSidebar";
@@ -48,6 +48,7 @@ export default function Profile() {
     const [isEditMode, setIsEditMode] = useState(false);
     const [editedBio, setEditedBio] = useState("");
     const [editedName, setEditedName] = useState("");
+    const [editedBirthday, setEditedBirthday] = useState("");
     const [isSaving, setIsSaving] = useState(false);
 
     // File states
@@ -133,6 +134,7 @@ export default function Profile() {
                 setProfileDetails(data?.profileDetails || {});
                 setEditedBio(data?.user?.bio || "");
                 setEditedName(data?.user?.name || "");
+                setEditedBirthday(data?.user?.birthday ? new Date(data.user.birthday).toISOString().split('T')[0] : "");
                 setReadyToListen(data?.user?.readyToListen || false);
             } catch (e: any) {
                 setErrorMsg(e?.message || "Failed to load profile");
@@ -286,6 +288,7 @@ export default function Profile() {
             const formData = new FormData();
             formData.append("bio", editedBio);
             formData.append("name", editedName);
+            formData.append("birthday", editedBirthday);
             if (profileImageFile) formData.append("profileImage", profileImageFile);
             if (bannerImageFile) formData.append("bannerImage", bannerImageFile);
 
@@ -594,6 +597,18 @@ export default function Profile() {
                                                     )}
                                                 </div>
 
+                                                {isEditMode && (
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <span className="text-[10px] text-[#B3A7CE] font-bold uppercase tracking-wider">Birthday:</span>
+                                                        <input
+                                                            type="date"
+                                                            value={editedBirthday}
+                                                            onChange={(e) => setEditedBirthday(e.target.value)}
+                                                            className="bg-white/5 border border-white/10 rounded-xl px-3 py-1 text-[#F3EFFF] text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#C65CFF] cursor-pointer"
+                                                        />
+                                                    </div>
+                                                )}
+
                                                 <p className="text-[#7C7196] font-medium text-sm mb-3">
                                                     @{profile?.user?.username}
                                                 </p>
@@ -612,6 +627,12 @@ export default function Profile() {
                                                         <Calendar className="w-3.5 h-3.5 text-[#7C7196]" />
                                                         Member since {formatDayAndDate(profile?.user?.createdAt)}
                                                     </span>
+                                                    {profile?.user?.birthday && (
+                                                        <span className="flex items-center gap-1.5">
+                                                            <Cake className="w-3.5 h-3.5 text-[#7C7196]" />
+                                                            Born {new Date(profile.user.birthday).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>

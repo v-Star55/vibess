@@ -123,6 +123,7 @@ export async function GET(req: NextRequest) {
     // Return top 7 GPs
     const topGPs = gpsWithScores.slice(0, 7).map((gp) => ({
       _id: gp._id,
+      gpName: gp.gpName || "",
       category: gp.category,
       subType: gp.subType,
       specificName: gp.specificName,

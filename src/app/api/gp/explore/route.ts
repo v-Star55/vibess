@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
+    const search = searchParams.get("search");
     const category = searchParams.get("category");
     const subType = searchParams.get("subType");
     const vibeType = searchParams.get("vibeType");
@@ -42,27 +43,105 @@ export async function GET(req: NextRequest) {
 
     // Build query
     const query: any = {
-      status: "active",
-      expiresAt: { $gt: now },
-      isPermanent: false,
       members: { $ne: user._id }, // Exclude GPs user is already in
     };
 
+    const type = searchParams.get("type") || "all"; // "all", "temporary", "permanent"
+    
+    // Status/type constraints
+    const typeConstraints: any[] = [];
+    if (type === "permanent") {
+      typeConstraints.push({ status: "converted", isPermanent: true });
+    } else if (type === "temporary") {
+      typeConstraints.push({ status: "active", isPermanent: false, expiresAt: { $gt: now } });
+    } else {
+      typeConstraints.push({
+        $or: [
+          { status: "active", isPermanent: false, expiresAt: { $gt: now } },
+          { status: "converted", isPermanent: true }
+        ]
+      });
+    }
+
+    // Build the final query array of conditions
+    const andConditions: any[] = [...typeConstraints];
+
+    if (search && search.trim()) {
+      const searchRegex = { $regex: search.trim(), $options: "i" };
+      andConditions.push({
+        $or: [
+          { gpName: searchRegex },
+          { specificName: searchRegex },
+          { description: searchRegex },
+        ]
+      });
+    }
+
     if (category && GP_CATEGORIES.includes(category as any)) {
-      query.category = category;
+      andConditions.push({ category });
     }
 
     if (subType) {
-      query.subType = { $regex: subType, $options: "i" };
+      andConditions.push({ subType: { $regex: subType, $options: "i" } });
     }
 
     if (vibeType) {
-      query.subType = vibeType;
+      andConditions.push({ subType: vibeType });
     }
 
     if (topic) {
-      query.talkTopics = { $in: [topic] };
+      andConditions.push({ talkTopics: { $in: [topic] } });
     }
+
+    if (andConditions.length > 0) {
+      query.$and = andConditions;
+    }
+
+    // Category count aggregation
+    const countQuery: any = {
+      members: { $ne: user._id },
+    };
+    
+    const countAndConditions: any[] = [...typeConstraints];
+    
+    if (search && search.trim()) {
+      const searchRegex = { $regex: search.trim(), $options: "i" };
+      countAndConditions.push({
+        $or: [
+          { gpName: searchRegex },
+          { specificName: searchRegex },
+          { description: searchRegex },
+        ]
+      });
+    }
+    
+    if (subType) {
+      countAndConditions.push({ subType: { $regex: subType, $options: "i" } });
+    }
+
+    if (vibeType) {
+      countAndConditions.push({ subType: vibeType });
+    }
+
+    if (topic) {
+      countAndConditions.push({ talkTopics: { $in: [topic] } });
+    }
+
+    if (countAndConditions.length > 0) {
+      countQuery.$and = countAndConditions;
+    }
+
+    const categoryCountsAgg = await Group.aggregate([
+      { $match: countQuery },
+      { $group: { _id: "$category", count: { $sum: 1 } } }
+    ]);
+
+    const categoryCounts: Record<string, number> = {};
+    categoryCountsAgg.forEach((item) => {
+      if (item._id) {
+        categoryCounts[item._id] = item.count;
+      }
+    });
 
     // Get user location if available (for distance filtering)
     const currentUser = await User.findById(user._id).select("location");
@@ -146,6 +225,7 @@ export async function GET(req: NextRequest) {
     // Format response
     const formattedGPs = paginatedGPs.map(({ gp, distance }) => ({
       _id: gp._id,
+      gpName: gp.gpName || "",
       category: gp.category,
       subType: gp.subType,
       specificName: gp.specificName,
@@ -161,7 +241,11 @@ export async function GET(req: NextRequest) {
       maxMembers: gp.maxMembers,
       createdBy: gp.createdBy,
       expiresAt: gp.expiresAt,
-      timeLeft: Math.max(0, Math.floor((gp.expiresAt.getTime() - now.getTime()) / (1000 * 60))),
+      timeLeft: gp.isPermanent
+        ? null
+        : Math.max(0, Math.floor((gp.expiresAt.getTime() - now.getTime()) / (1000 * 60))),
+      isPermanent: gp.isPermanent,
+      status: gp.status,
       distance: distance ? Math.round(distance * 10) / 10 : null,
       city: gp.city,
       zone: gp.zone,
@@ -171,6 +255,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       gps: formattedGPs,
+      categoryCounts,
       pagination: {
         page,
         limit,
