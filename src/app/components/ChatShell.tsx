@@ -109,7 +109,7 @@ export default function ChatShell({ children }: ChatShellProps) {
   return (
     <div className="flex h-full w-full overflow-hidden">
       {/* ── Chat List Column ─────────────────── */}
-      <div className="hidden md:flex w-[320px] lg:w-[340px] shrink-0 h-full flex-col">
+      <div className={`${activeChatId ? "hidden md:flex" : "flex"} w-full md:w-[320px] lg:w-[340px] shrink-0 h-full flex-col`}>
         <ChatListSidebar
           chats={filteredChats}
           activeChatId={activeChatId}
@@ -123,7 +123,7 @@ export default function ChatShell({ children }: ChatShellProps) {
       </div>
 
       {/* ── Conversation Column ──────────────── */}
-      <div className="flex-1 flex flex-col h-full min-w-0 relative">
+      <div className={`${activeChatId ? "flex" : "hidden md:flex"} flex-1 flex flex-col h-full min-w-0 relative`}>
         {/* Background radial glows */}
         <div
           className="absolute inset-0 pointer-events-none z-0"

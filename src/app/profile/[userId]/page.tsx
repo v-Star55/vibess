@@ -138,6 +138,8 @@ export default function Profile() {
                 setEditedName(data?.user?.name || "");
                 setEditedBirthday(data?.user?.birthday ? new Date(data.user.birthday).toISOString().split('T')[0] : "");
                 setReadyToListen(data?.user?.readyToListen || false);
+                setShowExactDistance(data?.user?.showExactDistance !== false);
+                setAppearInHeatmap(data?.user?.appearInHeatmap !== false);
             } catch (e: any) {
                 setErrorMsg(e?.message || "Failed to load profile");
             } finally {
@@ -313,6 +315,36 @@ export default function Profile() {
             toast.error("Failed to update profile");
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleToggleExactDistance = async () => {
+        const newValue = !showExactDistance;
+        setShowExactDistance(newValue);
+        try {
+            const formData = new FormData();
+            formData.append("showExactDistance", String(newValue));
+            const res = await updateUserProfile(formData);
+            setProfile((prev: any) => ({ ...prev, user: res.user }));
+            toast.success(newValue ? "Exact distance enabled" : "Fuzzy distance enabled");
+        } catch (error) {
+            setShowExactDistance(!newValue);
+            toast.error("Failed to update settings");
+        }
+    };
+
+    const handleToggleAppearInHeatmap = async () => {
+        const newValue = !appearInHeatmap;
+        setAppearInHeatmap(newValue);
+        try {
+            const formData = new FormData();
+            formData.append("appearInHeatmap", String(newValue));
+            const res = await updateUserProfile(formData);
+            setProfile((prev: any) => ({ ...prev, user: res.user }));
+            toast.success(newValue ? "Visible in Heatmap" : "Incognito mode active");
+        } catch (error) {
+            setAppearInHeatmap(!newValue);
+            toast.error("Failed to update settings");
         }
     };
 
@@ -1152,7 +1184,7 @@ export default function Profile() {
                                             </div>
                                             <button
                                                 type="button"
-                                                onClick={() => setShowExactDistance(!showExactDistance)}
+                                                onClick={handleToggleExactDistance}
                                                 className={`w-10 h-[22px] rounded-full p-0.5 transition-colors duration-200 border border-white/10 shrink-0 relative flex items-center ${
                                                     showExactDistance ? "bg-gradient-to-r from-[#33D6C0] to-[#C65CFF]" : "bg-white/10"
                                                 }`}
@@ -1173,7 +1205,7 @@ export default function Profile() {
                                             </div>
                                             <button
                                                 type="button"
-                                                onClick={() => setAppearInHeatmap(!appearInHeatmap)}
+                                                onClick={handleToggleAppearInHeatmap}
                                                 className={`w-10 h-[22px] rounded-full p-0.5 transition-colors duration-200 border border-white/10 shrink-0 relative flex items-center ${
                                                     appearInHeatmap ? "bg-gradient-to-r from-[#33D6C0] to-[#C65CFF]" : "bg-white/10"
                                                 }`}

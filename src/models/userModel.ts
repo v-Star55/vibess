@@ -104,6 +104,14 @@ const userSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        appearInHeatmap: {
+            type: Boolean,
+            default: true,
+        },
+        showExactDistance: {
+            type: Boolean,
+            default: true,
+        },
         location: {
             type: {
                 type: String,

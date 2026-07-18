@@ -54,12 +54,13 @@ export async function getVibeMatches() {
   }
 }
 
-export async function getVibeHeatmap(lat?: number, lng?: number, radius?: number) {
+export async function getVibeHeatmap(lat?: number, lng?: number, radius?: number, visual?: boolean) {
   try {
     const params = new URLSearchParams();
     if (lat !== undefined) params.append("lat", lat.toString());
     if (lng !== undefined) params.append("lng", lng.toString());
     if (radius !== undefined) params.append("radius", radius.toString());
+    if (visual !== undefined) params.append("visual", visual.toString());
     
     const res = await api.get(`/vibe/heatmap?${params.toString()}`);
     return res.data;

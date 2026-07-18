@@ -710,27 +710,29 @@ export default function GroupsPage() {
     <div className="flex h-full w-full overflow-hidden bg-[#07011d] text-white">
       
       {/* Sidebar Panel */}
-      <GroupSidebar
-        gps={gps}
-        selectedRoomId={selectedRoom?._id}
-        onSelectRoom={loadGP}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        selectedCategory={selectedCategory}
-        setSelectedCategory={setSelectedCategory}
-        user={user}
-        onBrowse={() => router.push("/app-home")}
-        getCategoryIcon={getCategoryIcon}
-        getShortCategoryName={getShortCategoryName}
-        getThemeColors={getThemeColors}
-        getLastMessageText={getLastMessageText}
-        getLastMessageTime={getLastMessageTime}
-        formatTimeRemaining={formatTimeRemaining}
-        activeThemeBg={activeTheme ? activeTheme.bg : undefined}
-      />
+      <div className={`${selectedRoom ? "hidden md:flex" : "flex"} shrink-0 h-full w-full md:w-auto`}>
+        <GroupSidebar
+          gps={gps}
+          selectedRoomId={selectedRoom?._id}
+          onSelectRoom={loadGP}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+          user={user}
+          onBrowse={() => router.push("/app-home")}
+          getCategoryIcon={getCategoryIcon}
+          getShortCategoryName={getShortCategoryName}
+          getThemeColors={getThemeColors}
+          getLastMessageText={getLastMessageText}
+          getLastMessageTime={getLastMessageTime}
+          formatTimeRemaining={formatTimeRemaining}
+          activeThemeBg={activeTheme ? activeTheme.bg : undefined}
+        />
+      </div>
 
       {/* Main Chat Workspace */}
-      <main className="flex-1 flex flex-col min-w-0 h-full relative z-10">
+      <main className={`${selectedRoom ? "flex" : "hidden md:flex"} flex-1 flex flex-col min-w-0 h-full relative z-10`}>
         {selectedRoom ? (
           <ChatArea
             selectedRoom={selectedRoom}
@@ -770,6 +772,7 @@ export default function GroupsPage() {
             handleToggleCompleteChallenge={handleToggleCompleteChallenge}
             handleDeletePoll={handleDeletePoll}
             handleDeleteChallenge={handleDeleteChallenge}
+            onBack={() => setSelectedRoom(null)}
           />
         ) : (
           <ChatPlaceholder onBrowse={() => router.push("/app-home")} />

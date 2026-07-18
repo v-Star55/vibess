@@ -1,115 +1,139 @@
 # Vibess 🌟
 
-A modern social networking platform that helps you connect with people who match your vibe. Share your mood, discover like-minded individuals, join temporary groups, and build meaningful connections through mood-based matching.
+A modern social networking platform that helps you connect with people who match your vibe. Share your mood, discover like-minded individuals, join temporary groups, play interactive mini-games inside chat rooms, and build meaningful connections through mood-based matching and supportive spaces.
 
 ## ✨ Features
 
-### 🎭 Vibe Card System
-- **Create Your Vibe**: Express your current mood with emojis, a 6-7 word description, and your favorite song
-- **Smart Matching**: AI-powered algorithm matches you with users based on:
+### 🎭 Vibe Card System & Heatmap
+- **Create Your Vibe**: Express your current mood with emojis, a 6-7 word description, and your favorite song.
+- **Smart Matching**: AI-powered matching algorithm (powered by Google Gemini) matches you with users based on:
   - Mood compatibility (25%)
   - Energy levels (20%)
   - Positivity (20%)
   - Music genre affinity (15%)
   - Intent from description (20%)
-- **Dynamic Theming**: Auto-generated themes based on your music genre, BPM, and emoji
-- **Vibe Heatmap**: See trending moods and emojis in your area or globally
-- **Auto Refresh**: Get reminders to update your vibe every 12 hours
+- **Vibe Heatmap & Radar**: A real-time radar scanning view of surrounding vibe cards.
+  - **Fuzzy Privacy Controls**: Opt to "appear in heatmap" or not. Toggle "exact distance" or use a randomized coordinate decoy signal to protect your precise location.
+  - **Radar Filters**: Custom radius scanning (up to 500km), minimum vibe energy thresholds, and intent filters.
+- **Auto-Refresh**: Get reminders to update your vibe every 12 hours.
 
-### 💬 Chat System
-- **24-Hour Chat Windows**: When you match with someone, unlock a private chat for 24 hours
-- **Permanent Unlock**: Chat stays open permanently if both users follow each other
-- **AI Icebreakers**: Get personalized conversation starters powered by Google Gemini AI
-- **Real-time Messaging**: Connect and chat with your matches
-- **Safety Features**: Report and block users for a safe experience
+### 💬 Chat System & Sparks Mini-Games
+- **24-Hour Chat Windows**: Matched users unlock a private chat window active for 24 hours.
+- **Permanent Unlock**: Chat stays open permanently if both users follow each other.
+- **AI Icebreakers**: Personalized conversation starters powered by Google Gemini AI.
+- **Real-Time Messages**: Instant messaging with live typing indicators.
+- **Sparks Panel (In-Chat Mini-Games)**: Interactive games playable directly within the chat screen, synced in real-time via WebSockets:
+  - **Tic-Tac-Toe**: Classic turn-based grid battle.
+  - **Connect Four**: Drop tokens to match four in a row.
+  - **Truth or Dare**: Prompts for breaking the ice.
+  - **Quick Draw**: A collaborative drawing board with real-time canvas updates and word-guessing.
+  - **Coin Flip**: Fast decision maker directly in the chat panel.
 
-### 👥 Group Posts (GP) System
-- **Temporary Groups**: Create location-based groups that last 3 hours
-- **Categories**: 
-  - Vibe GP (Fun, Chill, Overthinker, Chaos, etc.)
-  - Movie GP (by movie name or genre)
-  - Anime GP (by anime name or genre)
-  - Other GP (Standup, Travel, Tech Talk, Music, Sports)
-- **Location-Based Discovery**: Find groups near you with progressive radius expansion
-- **Permanent Conversion**: Active groups can convert to permanent chat groups through voting
+### 👥 Group Posts (GP) & Chat Groups
+- **Temporary Groups (GPs)**: Create location-based groups lasting 3 hours with a maximum of 5 members.
+- **GP Categories**: Vibe GP (Fun, Chill, Chaos, etc.), Movie GP, Anime GP, and Other GP (Standup, Travel, Tech Talk, Music, Sports).
+- **Location-Based Discovery**: Find groups near you using a progressive location radius (10km → 500km).
+- **Permanent Conversion**: Active groups can convert to a permanent group chat room if members vote (70% approval required).
+- **Group Chat Area & Interactive Features**: Dedicated chat interface for group participants featuring:
+  - **Dynamic Theming**: Customized gradients, background glows, and bubble styling corresponding to the active GP category (Vibe GP, Movie GP, Anime GP, Other GP).
+  - **Real-Time Polls & Challenges**: Interactive daily challenges and user-created polls synced live via WebSockets.
+  - **Anonymous Messages**: Toggle to send messages anonymously (limited to 3 anonymous messages per user per day in the group chat).
+  - **Chat Layout**: Live messaging feed, member drawer sidebar, and permanent conversion voting controls.
 - **Smart Limits**: 
-  - Max 2 GPs per day per user
-  - 1 hour cooldown after creation
-  - 1 active GP per category
-  - System-level limits to maintain quality
+  - Max 2 GPs per day per user (1-hour cooldown after creation).
+  - Max 1 active GP per category per user.
 
 ### 🤫 Whisper Space
-- **Anonymous Confessions**: Share your thoughts anonymously
-- **Community Wall**: View and interact with anonymous posts
-- **Safe Space**: Express yourself without revealing your identity
+- **Anonymous Confessions**: Share your thoughts anonymously.
+- **Community Wall**: View, browse, and interact with anonymous posts.
+- **Safe Space**: Express yourself without revealing your identity.
 
-### 🎮 Games & Entertainment
-- **Overthink Game**: Challenge yourself with thought-provoking games
-- **Daily Advice**: Get motivational advice every day
-- **Jokes**: Lighten your mood with curated jokes
+### 🎧 Listening Space (Support Network)
+- **Open to Listen Toggle**: Users can toggle their profile status to signal they are open to listen to others who need emotional support.
+- **Listen Cards & Requests**: Users can post a card detailing a topic, reason, and heaviness (Light, Moderate, Heavy) to find a supportive companion.
+- **Real-Time Duration Caching**: Computes and caches the total hours a user has spent listening incrementally upon session expiration or lock, maintaining high profile load performance (O(1) lookups).
+- **Empathy Ratings & Reviews**: Showcase listener reviews, empathy ratings, and custom topic tags on user profiles.
 
-### 📱 Social Features
-- **User Profiles**: Customize your profile, follow others, view matching statistics, and manage settings through a dynamic 3-dots dropdown menu.
+### 🎮 Games & Entertainment (Solo)
+- **The Overthink Button**: Challenging thoughts and ridiculous counter-strategies generated on-the-fly using Google Gemini AI.
+- **Make Your Decision**: Solo coin flipper to help make choices with a randomized heads/tails suspense spinner.
+- **Daily Advice & Jokes**: Get motivational advice and lighthearted jokes to brighten your day.
 
-### 🎧 Listening Space (Listening Profile)
-- **Open to Listen Toggle**: Users can toggle their status to mark themselves as open to listen to others who need support.
-- **Listen Cards & Requests**: Users can post a card detailing a topic, reason, and heaviness (Light, Moderate, Heavy) to find a companion.
-- **Real-Time Duration Caching**: Computes and caches the total hours a user has spent listening incrementally upon session expiration/lock, maintaining high profile load performance (O(1) lookups).
-- **Listener Reviews**: Display recent feedback, empathy ratings, and topic tags.
+### 🤖 AI Integration (Google Gemini)
+- **AI Icebreakers**: Contextual conversation starters for matched users.
+- **Vibe Enhancer**: Suggestions to refine and improve your vibe description card.
+- **Overthink Generator**: Dynamically generates thoughts and rationales.
+- **Content Moderation & Insights**: Behind-the-scenes checks on descriptions for user safety.
 
-### 🤖 AI Integration
-- **Google Gemini AI**: 
-  - Personalized icebreaker generation
-  - Vibe description enhancement suggestions
-  - Content moderation
-  - Matching insights
+---
 
 ## 🛠️ Tech Stack
 
-- **Framework**: Next.js 16 (App Router)
-- **Language**: TypeScript
-- **Database**: MongoDB with Mongoose
-- **Authentication**: JWT (Access & Refresh Tokens), NextAuth
-- **Styling**: Tailwind CSS 4
+### Frontend & Core App
+- **Framework**: Next.js 16 (App Router) & React 19
 - **State Management**: Zustand
-- **AI**: Google Gemini AI
-- **File Upload**: Cloudinary
-- **Email**: Nodemailer with AWS SES
-- **Icons**: Lucide React, Tabler Icons
+- **Styling**: Tailwind CSS 4 with custom CSS variables
 - **Animations**: Framer Motion
+- **Icons**: Lucide React & Tabler Icons
+
+### Database & Backend Services
+- **Database**: MongoDB with Mongoose (with Prisma schemas for potential extension)
+- **Authentication**: JWT (Access & Refresh Tokens) & NextAuth
+- **Media Storage**: Cloudinary (for profile images and graphics)
+- **Mail Service**: Nodemailer with AWS SES
 - **Validation**: Zod
 
-## 📋 Prerequisites
+### WebSocket Server (Real-Time Service)
+- **Runtime**: Node.js & Express
+- **Library**: Socket.io
+- **Features**: Chat rooms, direct user notification channel, typing status, live Sparks panel sync, listening cards status broadcast.
 
-- Node.js 18+ and npm/yarn/pnpm
-- MongoDB database (local or cloud like MongoDB Atlas)
-- Cloudinary account (for image uploads)
-- Google Gemini API key (optional, for AI features)
-- AWS SES credentials (optional, for email)
-- RapidAPI key (optional, for jokes API)
+---
 
-## 🚀 Getting Started
+## 📁 Project Structure
 
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/yourusername/vibess.git
-cd vibess
+```
+vibess/
+├── socket-server/           # Standalone WebSocket Server
+│   ├── server.js            # Express & Socket.io server logic
+│   ├── package.json         # Server dependencies & nodemon config
+│   └── .env                 # Server env variables (CLIENT_URL, PORT)
+├── src/
+│   ├── app/
+│   │   ├── (auth)/          # Authentication (login, signup, verifyemail)
+│   │   ├── app-home/        # Main landing dashboard after login
+│   │   ├── api/             # Next.js API Routes (advice, ai, auth, chat, games, gp, jokes, listen, user, vibe, whisper-space)
+│   │   ├── chat/            # Chat room screens with SparksPanel integration
+│   │   │   └── [chatId]/
+│   │   ├── chat-room/       # Matched chat window listings
+│   │   ├── components/      # Key components (AppLayout, SparksPanel, VibeCard, TrendCard, RightSide, JokeDisplay)
+│   │   │   ├── sparks/      # Sparks mini-games: TicTacToe, ConnectFour, TruthOrDare, QuickDraw, CoinFlip
+│   │   │   └── ui/          # Shareable UI components (e.g. Loader, select dropdowns)
+│   │   ├── explore/         # Global vibe card discovery
+│   │   ├── games/           # Solo games hub (Overthinker and Make Decision)
+│   │   ├── gp/              # Group Posts creation flow
+│   │   ├── groups/          # Active / Permanent group chats (sidebar, chat area)
+│   │   ├── listen/          # Listening space board & request list
+│   │   ├── profile/         # Profile details and stats for users
+│   │   │   └── [userId]/
+│   │   ├── whisper-space/   # Anonymous confession wall
+│   │   ├── globals.css      # Core global stylesheet
+│   │   ├── layout.tsx       # Root layout configuration
+│   │   └── page.tsx         # Gateway entry route (handles redirection)
+│   ├── hooks/               # Custom hooks (e.g., useSocket)
+│   ├── lib/                 # Core API request utilities
+│   └── store/               # Zustand state stores (user, chat notification stores)
+├── public/                  # Public assets & icons
+├── README.md                # System Overview
+└── package.json             # Main app dependencies
 ```
 
-### 2. Install Dependencies
+---
 
-```bash
-npm install
-# or
-yarn install
-# or
-pnpm install
-```
+## 📋 Environment Setup
 
-### 3. Set Up Environment Variables
-
-Create a `.env.local` file in the root directory:
+### 1. App Environment Variables (`.env.local`)
+Create a `.env.local` file in the root folder of the `vibess` project:
 
 ```env
 # Database
@@ -119,149 +143,86 @@ MONGODB_URI=your_mongodb_connection_string
 ACCESS_TOKEN_SECRET=your_access_token_secret
 REFRESH_TOKEN_SECRET=your_refresh_token_secret
 
-# API URL
+# API & Server URLs
 NEXT_PUBLIC_API_URL=http://localhost:3000/api
+NEXT_PUBLIC_SOCKET_URL=http://localhost:3001
 
 # Cloudinary (for image uploads)
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
 
-# Google Gemini AI (optional)
+# Google Gemini AI
 GEMINI_API_KEY=your_gemini_api_key
 
-# AWS SES (optional, for email)
+# AWS SES (for email support)
 AWS_REGION=your_aws_region
 AWS_ACCESS_KEY_ID=your_access_key
 AWS_SECRET_ACCESS_KEY=your_secret_key
 
-# Internal API Key (for background jobs)
+# Internal API Key (for background sync jobs)
 INTERNAL_API_KEY=your_internal_api_key
 
-# RapidAPI (optional, for jokes)
+# RapidAPI (for daily jokes)
 RAPIDAPI_KEY=your_rapidapi_key
 ```
 
-### 4. Run the Development Server
+### 2. Socket Server Environment Variables (`socket-server/.env`)
+Create a `.env` file in the `socket-server` directory:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
+```env
+PORT=3001
+CLIENT_URL=http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+---
 
-### 5. Build for Production
+## 🚀 Getting Started
 
+### 1. Clone the Repository
 ```bash
+git clone https://github.com/yourusername/vibess.git
+cd vibess
+```
+
+### 2. Install Dependencies
+Install packages for both the Next.js app and the WebSocket server:
+```bash
+# Install main application packages
+npm install
+
+# Install socket server packages
+cd socket-server
+npm install
+cd ..
+```
+
+### 3. Run in Development Mode
+You need to run both the Next.js frontend app and the socket server:
+
+**Terminal 1 (Next.js Application):**
+```bash
+npm run dev
+```
+
+**Terminal 2 (Socket Server):**
+```bash
+cd socket-server
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) to access Vibess.
+
+### 4. Build for Production
+```bash
+# Build next app
 npm run build
+npm start
+
+# Run socket server in production
+cd socket-server
 npm start
 ```
 
-## 📁 Project Structure
-
-```
-vibess/
-├── src/
-│   ├── app/
-│   │   ├── (auth)/          # Authentication pages
-│   │   │   ├── login/
-│   │   │   ├── signup/
-│   │   │   └── verifyemail/
-│   │   ├── api/             # API routes
-│   │   │   ├── advice/      # Daily advice
-│   │   │   ├── ai/          # AI endpoints
-│   │   │   ├── auth/        # Authentication
-│   │   │   ├── chat/        # Chat system
-│   │   │   ├── games/       # Games
-│   │   │   ├── gp/          # Group Posts
-│   │   │   ├── jokes/       # Jokes
-│   │   │   ├── user/        # User management
-│   │   │   ├── vibe/        # Vibe cards
-│   │   │   └── whisper-space/ # Anonymous confessions
-│   │   ├── components/      # React components
-│   │   ├── config/          # Configuration files
-│   │   ├── helpers/         # Helper functions
-│   │   ├── lib/             # Utility libraries
-│   │   └── models/          # Database models
-│   ├── components/          # Shared components
-│   └── hooks/               # Custom React hooks
-├── public/                  # Static assets
-├── lib/                     # Shared utilities
-└── README.md
-```
-
-## 🔑 Key Features Explained
-
-### Vibe Matching Algorithm
-
-The matching system uses a weighted similarity calculation:
-- **Mood** (25%): Extracted from emoji emotional categories
-- **Energy** (20%): Calculated from BPM + emoji adjustments
-- **Positivity** (20%): Analyzes description words + emoji sentiment
-- **Genre** (15%): Music genre compatibility
-- **Intent** (20%): Extracted from description keywords
-
-Only matches with ≥70% similarity are shown.
-
-### Group Post (GP) System
-
-GPs are temporary location-based groups:
-- **Duration**: 3 hours
-- **Max Members**: 5 per group
-- **Discovery**: Location-based with progressive radius (10km → 25km → 50km → 100km → 500km)
-- **Priority Scoring**: Based on members needed, time remaining, distance, and activity
-- **Permanent Conversion**: Groups can become permanent through voting (70% approval required)
-
-### Chat Windows
-
-- **24-Hour Window**: Opens when users match via vibe cards
-- **Auto-Lock**: Closes after 24 hours if users don't follow each other
-- **Permanent Unlock**: Stays open if both users follow each other
-- **Safety**: Built-in reporting and blocking features
-
-## 📚 Documentation
-
-- [Vibe Card System](./VIBE_CARD_SYSTEM.md) - Complete guide to vibe cards
-- [GP System](./GP_SYSTEM.md) - Group Posts implementation details
-- [Gemini AI Setup](./GEMINI_SETUP.md) - AI integration guide
-- [How to Use Gemini](./HOW_TO_USE_GEMINI.md) - Quick reference for AI features
-
-
-## 🧪 Development
-
-### Running Linter
-
-```bash
-npm run lint
-```
-
-### Environment Setup
-
-Make sure all required environment variables are set in `.env.local`. Refer to the environment variables section above.
-
-## 🚢 Deployment
-
-### Vercel (Recommended)
-
-1. Push your code to GitHub
-2. Import your repository to Vercel
-3. Add environment variables in Vercel dashboard
-4. Deploy!
-
-### Other Platforms
-
-The app can be deployed to any platform that supports Next.js:
-- Netlify
-- AWS Amplify
-- Railway
-- Render
-
-Make sure to set all environment variables in your deployment platform.
-
-
-
+---
 Made with ❤️ by Vaibhav

@@ -1561,6 +1561,17 @@ export default function ListenPage() {
         .star-picker button:hover svg {
           transform: scale(1.15);
         }
+        @media (max-width: 640px) {
+          .req-card {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+          }
+          .listen-btn {
+            width: 100%;
+            justify-content: center;
+          }
+        }
       ` }} />
 
       <div className="max-w-6xl mx-auto space-y-8">

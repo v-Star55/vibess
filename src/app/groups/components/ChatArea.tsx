@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { 
   Clock, BellOff, Bell, LogOut, Lock, MessageCircle, 
   Sparkles, Trophy, Award, Plus, Paperclip, Send, Loader2, ArrowRight, CheckCircle2, ChevronDown, ChevronUp,
-  Trash2, Ghost
+  Trash2, Ghost, ArrowLeft
 } from "lucide-react";
 import { useIsMobile } from "@/src/hooks/use-mobile";
 import {
@@ -88,6 +88,7 @@ interface ChatAreaProps {
   handleToggleCompleteChallenge: (chalId: string) => void;
   handleDeletePoll: (pollId: string) => void;
   handleDeleteChallenge: (chalId: string) => void;
+  onBack?: () => void;
 }
 
 export default function ChatArea({
@@ -128,6 +129,7 @@ export default function ChatArea({
   handleToggleCompleteChallenge,
   handleDeletePoll,
   handleDeleteChallenge,
+  onBack,
 }: ChatAreaProps) {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -182,6 +184,17 @@ export default function ChatArea({
       {/* Chat Workspace Header */}
       <header className="bg-white/[0.01] backdrop-blur-xl border-b border-white/5 px-6 py-4 flex items-center justify-between z-10 shrink-0">
         <div className="flex items-center gap-3 min-w-0">
+          {/* Back button on mobile */}
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="md:hidden p-2 -ml-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 active:scale-95 transition-all shrink-0"
+              title="Back to groups"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          )}
+
           {/* Header Icon squircle */}
           <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-lg shrink-0 shadow-md border ${activeTheme.iconBg}`}>
             {getCategoryIcon(selectedRoom.category)}

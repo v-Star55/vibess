@@ -93,7 +93,7 @@ export default function GroupSidebar({
   });
 
   return (
-    <aside className={`w-80 shrink-0 border-r border-white/5 backdrop-blur-xl flex flex-col h-full z-20 transition-all duration-300 ${
+    <aside className={`w-full md:w-80 shrink-0 border-r border-white/5 backdrop-blur-xl flex flex-col h-full z-20 transition-all duration-300 ${
       activeThemeBg || "bg-[#07011d]"
     }`}>
       

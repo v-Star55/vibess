@@ -44,8 +44,8 @@ export default function Home() {
     }
   }, [user, setUser, router]);
 
-  // Show loading state briefly, then landing page if not logged in
-  if (checking && !user) {
+  // Show loading state while checking or if user is logged in (redirecting)
+  if (checking || user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#1d0033] via-[#2a0a4a] to-[#1d0033] flex items-center justify-center">
         <Loader size="xl" color="purple" />

@@ -23,6 +23,8 @@ export async function PATCH(req: NextRequest) {
     const birthday = formData.get("birthday") as string | null;
     const profileFile = formData.get("profileImage") as File | null;
     const bannerFile = formData.get("bannerImage") as File | null;
+    const appearInHeatmapStr = formData.get("appearInHeatmap") as string | null;
+    const showExactDistanceStr = formData.get("showExactDistance") as string | null;
 
     // 🖼️ Upload to Cloudinary if provided
     const updates: Record<string, any> = {};
@@ -33,6 +35,14 @@ export async function PATCH(req: NextRequest) {
 
     if (birthday !== undefined && birthday !== null) {
       updates.birthday = birthday ? new Date(birthday) : null;
+    }
+
+    if (appearInHeatmapStr !== null) {
+      updates.appearInHeatmap = appearInHeatmapStr === "true";
+    }
+
+    if (showExactDistanceStr !== null) {
+      updates.showExactDistance = showExactDistanceStr === "true";
     }
 
     if (profileFile && profileFile.size > 0) {

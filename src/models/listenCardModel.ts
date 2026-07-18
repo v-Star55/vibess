@@ -70,9 +70,5 @@ const listenCardSchema = new mongoose.Schema(
 // Index to query active and non-expired cards
 listenCardSchema.index({ status: 1, expiresAt: 1 });
 
-if (mongoose.models.ListenCard) {
-  delete mongoose.models.ListenCard;
-}
-
-const ListenCard = mongoose.model("ListenCard", listenCardSchema);
+const ListenCard = mongoose.models.ListenCard || mongoose.model("ListenCard", listenCardSchema);
 export default ListenCard;

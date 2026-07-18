@@ -7,7 +7,6 @@ import { Sparkles } from "lucide-react";
 export default function JokeDisplay() {
   const [joke, setJoke] = useState<string>("");
   const [loading, setLoading] = useState(true);
-  const [clicked, setClicked] = useState(false);
 
   const fetchNewJoke = async () => {
     try {
@@ -34,10 +33,7 @@ export default function JokeDisplay() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleEmojiClick = () => {
-    setClicked(true);
-    setTimeout(() => setClicked(false), 220);
-  };
+
 
   return (
     <div className="tip-card glass font-sans text-white w-full">
@@ -55,16 +51,6 @@ export default function JokeDisplay() {
           <p className="text-[15.5px] leading-[1.45] text-[#f3efff]">{joke}</p>
         )}
       </div>
-      <button 
-        onClick={handleEmojiClick}
-        className="tip-react shrink-0 text-xl cursor-pointer"
-        style={{
-          transform: clicked ? 'scale(1.4) rotate(10deg)' : 'none',
-          transition: 'transform 0.2s ease, background 0.2s ease',
-        }}
-      >
-        😊
-      </button>
     </div>
   );
 }

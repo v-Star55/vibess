@@ -20,7 +20,7 @@ import {
   HeartHandshake,
 } from "lucide-react";
 
-export default function LeftSide() {
+export default function LeftSide({ onClose }: { onClose?: () => void }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, setUser } = useUserStore();
@@ -90,14 +90,20 @@ export default function LeftSide() {
   ];
 
   const vibeItems = [
-    { icon: Sparkles, label: "Vibe Discover", path: "/vibe/discover" },
+    { icon: Sparkles, label: "Vibe Match", path: "/vibe/discover" },
     { icon: Flame, label: "Create Vibe", path: "/vibe/create" },
     { icon: MapPin, label: "Vibe Heatmap", path: "/vibe/heatmap" },
   ];
 
+  const handleNavigation = (path: string) => {
+    router.push(path);
+    if (onClose) onClose();
+  };
+
   const handleProfileClick = () => {
     if (user?.id) {
       router.push(`/profile/${user.id}`);
+      if (onClose) onClose();
     }
   };
 
@@ -133,7 +139,7 @@ export default function LeftSide() {
           return (
             <button
               key={item.label}
-              onClick={() => router.push(item.path)}
+              onClick={() => handleNavigation(item.path)}
               className={`nav-item w-full text-left transition-all ${isActive ? "active" : ""}`}
             >
               <Icon className="w-[18px] h-[18px] shrink-0" />
@@ -156,7 +162,7 @@ export default function LeftSide() {
           return (
             <button
               key={item.label}
-              onClick={() => router.push(item.path)}
+              onClick={() => handleNavigation(item.path)}
               className={`nav-item w-full text-left transition-all ${isActive ? "active" : ""}`}
             >
               <Icon className="w-[18px] h-[18px] shrink-0" />

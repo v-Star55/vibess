@@ -32,6 +32,7 @@ import {
   HeartHandshake,
   Trash2,
   MapPin,
+  ArrowLeft,
 } from "lucide-react";
 import Image from "next/image";
 import SparksPanel from "../../components/SparksPanel";
@@ -480,47 +481,58 @@ export default function ChatPage() {
 
       {/* ── CONVERSATION HEADER ── */}
       <div className="shrink-0 flex items-center justify-between gap-3 px-5 py-3.5 border-b border-white/[0.07] bg-[#100c1c]/80 backdrop-blur-xl relative z-50">
-        {/* Left: avatar + name */}
-        <div
-          onClick={() => setShowStarterCard(true)}
-          className="flex items-center gap-3 min-w-0 cursor-pointer hover:opacity-80 transition-all duration-200"
-          title="View conversation starters"
-        >
-          <div className="relative shrink-0">
-            <div
-              className="w-11 h-11 rounded-full overflow-hidden border border-white/10 flex items-center justify-center text-sm font-extrabold"
-              style={{
-                background: `linear-gradient(135deg, ${g1}, ${g2})`,
-                color: "#160E22",
-              }}
-            >
-              {otherUser?.profileImage ? (
-                <Image
-                  src={otherUser.profileImage}
-                  alt={otherUser.name}
-                  width={44}
-                  height={44}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span>{otherUser?.name?.[0] || "U"}</span>
-              )}
+        {/* Left: back button + avatar + name */}
+        <div className="flex items-center gap-3 min-w-0">
+          {/* Mobile Back Button */}
+          <button
+            onClick={() => router.push("/chat")}
+            className="md:hidden p-2 -ml-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 active:scale-95 transition-all shrink-0"
+            title="Back to chats"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+
+          <div
+            onClick={() => setShowStarterCard(true)}
+            className="flex items-center gap-3 min-w-0 cursor-pointer hover:opacity-80 transition-all duration-200"
+            title="View conversation starters"
+          >
+            <div className="relative shrink-0">
+              <div
+                className="w-11 h-11 rounded-full overflow-hidden border border-white/10 flex items-center justify-center text-sm font-extrabold"
+                style={{
+                  background: `linear-gradient(135deg, ${g1}, ${g2})`,
+                  color: "#160E22",
+                }}
+              >
+                {otherUser?.profileImage ? (
+                  <Image
+                    src={otherUser.profileImage}
+                    alt={otherUser.name}
+                    width={44}
+                    height={44}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span>{otherUser?.name?.[0] || "U"}</span>
+                )}
+              </div>
+              <span
+                className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[#100c1c] ${
+                  connected
+                    ? "bg-[#33D6C0] shadow-[0_0_6px_rgba(51,214,192,0.8)]"
+                    : "bg-white/20"
+                }`}
+              />
             </div>
-            <span
-              className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[#100c1c] ${
-                connected
-                  ? "bg-[#33D6C0] shadow-[0_0_6px_rgba(51,214,192,0.8)]"
-                  : "bg-white/20"
-              }`}
-            />
-          </div>
-          <div className="min-w-0">
-            <h2 className="text-white font-bold text-sm leading-tight truncate">
-              {otherUser?.name}
-            </h2>
-            <div className="flex items-center gap-1.5 text-white/35 text-[11px] font-mono mt-0.5">
-              <MapPin className="w-3 h-3 shrink-0" />
-              <span className="truncate">@{otherUser?.username}</span>
+            <div className="min-w-0">
+              <h2 className="text-white font-bold text-sm leading-tight truncate">
+                {otherUser?.name}
+              </h2>
+              <div className="flex items-center gap-1.5 text-white/35 text-[11px] font-mono mt-0.5">
+                <MapPin className="w-3 h-3 shrink-0" />
+                <span className="truncate">@{otherUser?.username}</span>
+              </div>
             </div>
           </div>
         </div>

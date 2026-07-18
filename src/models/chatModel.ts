@@ -139,9 +139,6 @@ chatSchema.methods.checkPermanentUnlock = async function () {
   return false;
 };
 
-if (mongoose.models && mongoose.models.Chat) {
-  delete mongoose.models.Chat;
-}
 const Chat = mongoose.models.Chat || mongoose.model("Chat", chatSchema);
 export default Chat;
 
